@@ -1,5 +1,7 @@
 package com.stock.stockify.domain.inventory;
 
+import com.stock.stockify.domain.category.Category;
+import com.stock.stockify.domain.category.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,19 +14,28 @@ import java.util.List;
 public class InventoryItemService {
 
     private final InventoryItemRepository inventoryItemRepository;
+    private final CategoryService categoryService; // 🔥 추가
 
-    // 📌 1. 재고 상품 등록
-    public InventoryItem createItem(InventoryItem item) {
+    // 🔥 재고 등록 기능
+    public InventoryItem createInventoryItem(InventoryItemRequest request) {
+        // 🔥 category 이름으로 Category 엔티티 찾아오기
+        Category category = categoryService.getCategoryByName(request.getCategory());
+
+        InventoryItem item = InventoryItem.builder()
+                .name(request.getName())
+                .quantity(request.getQuantity())
+                .category(category) // 🔥 수정: String → Category 엔티티
+                .build();
         return inventoryItemRepository.save(item);
     }
 
-    // 📌 2. 재고 상품 전체 조회
-    public List<InventoryItem> getAllItems() {
+    // 🔥 재고 전체 조회 기능
+    public List<InventoryItem> getAllInventoryItems() {
         return inventoryItemRepository.findAll();
     }
 
-    // 📌 3. 재고 상품 삭제
-    public void deleteItem(Long id) {
+    // 🔥 재고 삭제 기능
+    public void deleteInventoryItem(Long id) {
         inventoryItemRepository.deleteById(id);
     }
 }

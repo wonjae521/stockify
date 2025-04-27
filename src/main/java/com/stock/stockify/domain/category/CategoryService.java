@@ -26,6 +26,12 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
+    // ✅ 카테고리 이름으로 조회
+    public Category getCategoryByName(String name) {
+        return categoryRepository.findByName(name)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 카테고리입니다: " + name));
+    }
+
     // ✅ 카테고리 삭제
     public void deleteCategory(Long id) {
         categoryRepository.deleteById(id);

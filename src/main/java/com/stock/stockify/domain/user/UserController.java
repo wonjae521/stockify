@@ -1,7 +1,9 @@
 package com.stock.stockify.domain.user;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,8 +21,13 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody @Valid UserLoginRequest request) {
+    public ResponseEntity<String> login(@RequestBody @Valid UserLoginRequest request, HttpServletResponse response) {
+        // 로그인 성공 → JWT 토큰 발급
         String token = userService.login(request.getUsername(), request.getPassword());
-        return ResponseEntity.ok(token);
+
+        // 응답 헤더에 추가 (⭐ 여기 수정된 부분 ⭐)
+        response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+
+        return ResponseEntity.ok("로그인 성공"); // body에는 "로그인 성공"만 보내기
     }
 }
