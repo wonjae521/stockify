@@ -6,9 +6,9 @@ server:
 spring:
 # DB 설정(MySQL)
   datasource:
-    url: jdbc:mysql://localhost:3306/stockify?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: stockify
-    password: password
+    url: jdbc:mysql://localhost:3306/stockify?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: capstone!@
     driver-class-name: com.mysql.cj.jdbc.Driver
   servlet: # 파일 업로드 설정(이미지 첨부 등)
     multipart:
