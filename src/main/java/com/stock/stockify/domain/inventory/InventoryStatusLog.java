@@ -3,8 +3,8 @@ package com.stock.stockify.domain.inventory;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
+// 재고 입출고 및 조정 기록을 저장하는 테이블(inventory_status_logs)과 매핑
 @Entity
 @Table(name = "inventory_status_logs")
 @Getter
@@ -18,28 +18,31 @@ public class InventoryStatusLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 어떤 재고 품목에 대한 입출고 기록인지 연결
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "inventory_item_id", nullable = false)
-    @JsonIgnore // ✅ 여기에 붙여야 해!
-    private InventoryItem inventoryItem;
+    @JoinColumn(name = "item_id", nullable = false)
+    private InventoryItem inventoryItem;  // 기록 대상 재고 품목
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Action action; // 작업 종류 (입고 INBOUND, 출고 OUTBOUND, 조정 ADJUSTMENT)
 
     @Column(nullable = false)
     private int quantity; // 입출고 수량
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Status status; // IN(입고) or OUT(출고)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "triggered_by")
+    private com.stock.stockify.domain.user.User triggeredBy; // 기록한 사용자
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "timestamp", nullable = false, updatable = false)
+    private LocalDateTime timestamp; // 기록 생성 시각
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.timestamp = LocalDateTime.now();
     }
 
-    public enum Status {
-        IN, OUT
+    // 입출고 작업 종류를 정의하는 열거형(Enum)
+    public enum Action {
+        INBOUND, OUTBOUND, ADJUSTMENT // 입고, 출고, 조정
     }
 }

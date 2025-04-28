@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// AIReport 관련 API 요청을 처리하는 컨트롤러
+// 리포트 생성, 조회, 삭제 기능 제공
 @RestController
 @RequestMapping("/api/reports")
 @RequiredArgsConstructor
@@ -14,7 +16,7 @@ public class AIReportController {
 
     private final AIReportService aiReportService;
 
-    // ✅ AI 리포트 생성
+    // 리포트 생성
     @PostMapping
     public ResponseEntity<AIReport> createReport(@RequestBody @Valid AIReportRequest request) {
         AIReport report = AIReport.builder()
@@ -24,19 +26,19 @@ public class AIReportController {
         return ResponseEntity.ok(aiReportService.createReport(report));
     }
 
-    // ✅ 모든 AI 리포트 조회
+    // 모든 리포트 조회
     @GetMapping
     public ResponseEntity<List<AIReport>> getAllReports() {
         return ResponseEntity.ok(aiReportService.getAllReports());
     }
 
-    // ✅ 특정 ID로 AI 리포트 조회
+    // 특정 ID로 리포트 조회
     @GetMapping("/{id}")
     public ResponseEntity<AIReport> getReportById(@PathVariable Long id) {
         return ResponseEntity.ok(aiReportService.getReportById(id));
     }
 
-    // ✅ AI 리포트 삭제
+    // 리포트 삭제
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReport(@PathVariable Long id) {
         aiReportService.deleteReport(id);

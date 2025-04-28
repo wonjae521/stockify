@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+// InventoryStatusLog 관련 비즈니스 로직 처리 서비스 클래스
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -16,13 +17,14 @@ public class InventoryStatusLogService {
 
     // 입출고 기록 생성
     public InventoryStatusLog createLog(InventoryStatusLogRequest request) {
+        // 재고 조회
         InventoryItem item = inventoryItemRepository.findById(request.getInventoryItemId())
                 .orElseThrow(() -> new RuntimeException("해당 재고 아이템을 찾을 수 없습니다. ID: " + request.getInventoryItemId()));
-
+        // 입출고 기록 생성
         InventoryStatusLog log = InventoryStatusLog.builder()
                 .inventoryItem(item)
                 .quantity(request.getQuantity())
-                .status(request.getStatus())  // ⭐ 수정된 부분: request에서 Status enum 직접 받음
+                .action(request.getAction())
                 .build();
 
         return inventoryStatusLogRepository.save(log);

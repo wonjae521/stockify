@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+// 회원가입 요청 데이터를 받는 DTO
+// 아이디, 비밀번호, 역할(role)을 입력받는다
 @Setter
 @Getter
 public class UserRegisterRequest {

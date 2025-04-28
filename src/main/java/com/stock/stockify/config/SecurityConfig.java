@@ -18,34 +18,45 @@ import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
+// Spring Security 보안 설정 클래스
+// JWT 인증 기반으로 동작
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    // Spring Security의 필터 체인 설정
+    // CORS 설정, CSRF 비활성화, 세션 사용 안 함 (STATELESS), URL별 인증 및 권한 설정, JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ⭐️ CORS 허용 추가
+                // CORS 설정 적용
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // CSRF 비활성화 (JWT는 세션을 쓰지 않기 때문)
                 .csrf(csrf -> csrf.disable())
+                // 세션 관리 전략: STATELESS (매 요청마다 토큰 검증)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // URL별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/staff/**").hasRole("STAFF")
-                        .requestMatchers("/api/ar/**").hasRole("AR_USER")
+                        .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll() // 회원가입 인증 없이 가능
+                        .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll() // 로그인 인증 없이 가능
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN") // admin만 접근 가능
+                        .requestMatchers("/api/staff/**").hasRole("STAFF") // staff만 접근 가능
                         .requestMatchers("/api/inventories/**").hasAnyRole("ADMIN", "STAFF")
                         .anyRequest().authenticated()
                 )
+                // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 등록
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 폼 로그인(formLogin) 비활성화 (토큰 인증을 쓰니까 필요 없음)
                 .formLogin(form -> form.disable())
+                // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
                 .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
     }
 
+    // CORS 허용 설정 -> 프론트엔드(또는 Postman)에서 오는 요청을 허용하기 위함
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
@@ -55,10 +66,10 @@ public class SecurityConfig {
         config.setAllowedHeaders(List.of("*")); // 모든 Header 허용
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/**", config); // 모든 경로에 대해 위 설정 적용
         return new CorsFilter(source);
     }
-
+    // CORS 설정 소스 메소드 -> 위 corsFilter와 비슷하지만, SecurityFilterChain 설정에서 직접 사용하는 버전
     private UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of("*"));
@@ -70,7 +81,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-
+    // 비밀번호 암호화에 사용할 PasswordEncoder 빈 등록, BCrypt 해시 함수를 사용
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

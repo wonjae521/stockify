@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// 사용자(User) 관련 비즈니스 로직 처리 서비스
 @Service
 @RequiredArgsConstructor
 @Transactional

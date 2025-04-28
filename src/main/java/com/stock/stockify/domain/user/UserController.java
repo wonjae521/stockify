@@ -7,6 +7,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+// 사용자(User) 관련 API를 처리하는 컨트롤러
+// 회원가입, 로그인 기능 제공
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -25,9 +27,9 @@ public class UserController {
         // 로그인 성공 → JWT 토큰 발급
         String token = userService.login(request.getUsername(), request.getPassword());
 
-        // 응답 헤더에 추가 (⭐ 여기 수정된 부분 ⭐)
+        // 응답 헤더에 추가
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
 
-        return ResponseEntity.ok("로그인 성공"); // body에는 "로그인 성공"만 보내기
+        return ResponseEntity.ok("로그인 성공");
     }
 }

@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// InventoryStatusLog 관련 API 요청을 처리하는 컨트롤러
+// 입출고 기록 생성, 전체 조회 기능 제공
 @RestController
 @RequestMapping("/api/logs")
 @RequiredArgsConstructor

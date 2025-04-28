@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+// 데이터베이스 users 테이블과 매핑
+// 회원의 아이디, 비밀번호, 역할, 가입일 등을 관리
 @Entity
 @Table(name = "users")
 @Getter

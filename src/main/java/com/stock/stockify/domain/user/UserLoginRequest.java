@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+// 로그인 요청 데이터를 받는 DTO
+// 아이디와 비밀번호를 입력받는다
 @Getter
 @NoArgsConstructor
 public class UserLoginRequest {

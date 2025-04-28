@@ -17,19 +17,24 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+// 매 요청(Request)마다 동작하는 JWT 인증 필터
+// HTTP 요청 헤더에서 JWT 토큰을 읽어 유효한 경우 Spring Security 인증(SecurityContext)에 저장
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
+    // 실제 필터링 작업을 수행하는 메소드, 요청마다 실행
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // 요청 헤더에서 Authorization 값을 가져온다
         String authHeader = request.getHeader("Authorization");
 
+        // Authorization 헤더가 존재하고, "Bearer "로 시작하는 경우
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             Claims claims = jwtUtil.parseToken(token);
@@ -37,16 +42,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String role = claims.get("role", String.class);
 
             if (username != null && role != null) {
+                // Spring Security에서 사용 가능한 인증 객체 생성
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(username, null, Collections.singletonList(authority));
 
+                // 추가 요청 정보 설정 (IP 주소, 세션 ID 등)
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                // 현재 요청을 인증된 상태로 설정
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
 
-        // 🔥 토큰이 없더라도 그냥 다음 필터로 넘어가야 한다!
+        // 토큰이 없더라도 다음 필터로 넘어가야 함
         filterChain.doFilter(request, response);
     }
 }
