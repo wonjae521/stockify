@@ -22,7 +22,7 @@ public class InventoryStatusLogService {
         InventoryStatusLog log = InventoryStatusLog.builder()
                 .inventoryItem(item)
                 .quantity(request.getQuantity())
-                .status(request.getStatus())  // ⭐ 수정된 부분: request에서 Status enum 직접 받음
+                .action(request.getAction())  // ⭐ 수정된 부분: request에서 Status enum 직접 받음
                 .build();
 
         return inventoryStatusLogRepository.save(log);

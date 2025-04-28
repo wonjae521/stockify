@@ -1,10 +1,9 @@
 package com.stock.stockify.domain.inventory;
 
-import com.stock.stockify.domain.category.Category;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import com.stock.stockify.domain.category.Category;
 
 @Entity
 @Table(name = "inventory_items")
@@ -20,16 +19,28 @@ public class InventoryItem {
     private Long id;
 
     @Column(nullable = false)
-    private String name; // 상품명
+    private String name;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     @Column(nullable = false)
-    private Integer quantity; // 수량
+    private int quantity;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category; // 카테고리와 연관관계
+    @Column(name = "rfid_tag_id")
+    private String rfidTagId;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "barcode_id", unique = true)
+    private String barcodeId;
+
+    @Column(nullable = false)
+    private Double price;
+
+    @Column(name = "expiration_date")
+    private LocalDateTime expirationDate;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")

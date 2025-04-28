@@ -3,7 +3,6 @@ package com.stock.stockify.domain.inventory;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "inventory_status_logs")
@@ -18,28 +17,32 @@ public class InventoryStatusLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 어떤 재고 품목에 대한 입출고 기록인지 연결
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "inventory_item_id", nullable = false)
-    @JsonIgnore // ✅ 여기에 붙여야 해!
+    @JoinColumn(name = "item_id", nullable = false)
     private InventoryItem inventoryItem;
-
-    @Column(nullable = false)
-    private int quantity; // 입출고 수량
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status; // IN(입고) or OUT(출고)
+    private Action action; // INBOUND, OUTBOUND, ADJUSTMENT
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(nullable = false)
+    private int quantity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "triggered_by")
+    private com.stock.stockify.domain.user.User triggeredBy;
+
+    @Column(name = "timestamp", nullable = false, updatable = false)
+    private LocalDateTime timestamp;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        if (timestamp == null) {
+            timestamp = LocalDateTime.now();
+        }
     }
 
-    public enum Status {
-        IN, OUT
+    public enum Action {
+        INBOUND, OUTBOUND, ADJUSTMENT
     }
 }
