@@ -40,9 +40,11 @@ dependencies {
 	runtimeOnly 'com.mysql:mysql-connector-j'									// MySQL 드라이버
 	annotationProcessor 'org.projectlombok:lombok'								// Lombok (코드 간결하게)
 	compileOnly 'org.projectlombok:lombok'										// Lombok (코드 간결하게)
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'		// 테스트용
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'org.mockito:mockito-core:5.10.0'						// Mockito
+	testImplementation 'org.assertj:assertj-core:3.25.3'						// AssertJ (가독성 좋은 assertion)
+	testImplementation ('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
 }
 
 tasks.named('test') {
