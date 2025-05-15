@@ -26,6 +26,7 @@ public class InventoryItemService {
                 .name(request.getName())
                 .quantity(request.getQuantity())
                 .category(category)
+                .price(request.getPrice())
                 .build();
         return inventoryItemRepository.save(item);
     }

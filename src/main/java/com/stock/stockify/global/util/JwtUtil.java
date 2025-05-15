@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
 // JWT 토큰 생성, 패싱하는 유틸리티 클래스
 @Component
@@ -19,10 +20,11 @@ public class JwtUtil {
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24;
 
     // JWT 토큰 생성 메소드
-    public String generateToken(String username, String role) {
+    public String generateToken(String username, String role, List<String> permissions) {
         return Jwts.builder() // 생성된 JWT 토큰 문자열
                 .setSubject(username) // 토큰 제목(사용자명)
                 .claim("role", role) // 추가 데이터(역할)
+                .claim("permissions", permissions) // 사용자 권한 목록
                 .setIssuedAt(new Date()) // 발급 시간
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME)) // 만료 시간
                 .signWith(key) // 서명

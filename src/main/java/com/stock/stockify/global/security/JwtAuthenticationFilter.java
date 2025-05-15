@@ -16,6 +16,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 // 매 요청(Request)마다 동작하는 JWT 인증 필터
 // HTTP 요청 헤더에서 JWT 토큰을 읽어 유효한 경우 Spring Security 인증(SecurityContext)에 저장
@@ -41,9 +43,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = claims.getSubject();
             String role = claims.get("role", String.class);
 
+            // 사용자 권한 리스트 추출
+            List<String> permissions = claims.get("permissions", List.class);
+
             if (username != null && role != null) {
-                // Spring Security에서 사용 가능한 인증 객체 생성
+                // Spring Security에서 사용 가능한 인증 객체 생성, ROLE_ 기반 기본 역할 권한 생성
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+                // JWT에 포함된 permission을 GrantedAuthority로 변환
+                List<SimpleGrantedAuthority> permissionAuthorities = permissions != null ?
+                        permissions.stream()
+                                .map(SimpleGrantedAuthority::new)
+                                .collect(Collectors.toList())
+                        : List.of();
+
+                // 역할 + 세부 권한 모두 포함한 authorities 목록
+                List<SimpleGrantedAuthority> authorities = permissionAuthorities.stream()
+                        .collect(Collectors.toList());
+                authorities.add(authority); // ROLE_ADMIN 또는 ROLE_STAFF도 포함
+
+                // Spring Security에서 사용 가능한 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(username, null, Collections.singletonList(authority));
 

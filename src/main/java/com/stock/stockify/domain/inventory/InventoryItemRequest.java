@@ -11,4 +11,5 @@ public class InventoryItemRequest {
     private String name; // 상품명
     private Integer quantity; // 수량
     private String category; // 카테고리
+    private Double price; // 가격
 }
