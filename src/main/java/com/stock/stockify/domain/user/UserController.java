@@ -1,5 +1,6 @@
 package com.stock.stockify.domain.user;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final EmailVerificationService emailVerificationService;
 
     // 회원가입
     @PostMapping("/register")
@@ -28,15 +30,17 @@ public class UserController {
 
     // 로그인
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody @Valid UserLoginRequest request, HttpServletResponse response) {
-        // 로그인 성공 → JWT 토큰 발급
-        String token = userService.login(request.getUsername(), request.getPassword());
+    public ResponseEntity<LoginResponse> login(@RequestBody @Valid UserLoginRequest request, HttpServletResponse response) {
+        // 로그인 성공 → JWT 토큰 + 사용자 정보 반환
+        LoginResponse loginResponse = userService.login(request.getUsername(), request.getPassword());
 
-        // 응답 헤더에 추가
-        response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        // 응답 헤더에 토큰 추가
+        response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + loginResponse.getToken());
 
-        return ResponseEntity.ok("로그인 성공");
+        // 응답 바디에 사용자 정보와 인증 상태 포함
+        return ResponseEntity.ok(loginResponse);
     }
+
 
     // 아이디 수정
     @PatchMapping("/me/username")
@@ -57,5 +61,27 @@ public class UserController {
         userService.updatePassword(userId, request.getCurrentPassword(), request.getNewPassword());
         return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
     }
+
+    // 비밀번호 초기화 요청
+    @PostMapping("/request-password-reset")
+    public ResponseEntity<String> requestPasswordReset(@RequestBody @Valid PasswordResetRequest request,
+                                                       HttpServletRequest servletRequest) {
+        // 클라이언트 IP
+        String ip = servletRequest.getRemoteAddr();
+
+        // 사용자 확인 후 이메일 전송
+        emailVerificationService.sendPasswordResetToken(request.getUsername(), request.getEmail(), ip);
+
+        return ResponseEntity.ok("비밀번호 재설정 링크가 이메일로 전송되었습니다.");
+    }
+
+    // 비밀번호 초기화
+    @PatchMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody PasswordResetConfirmRequest request) {
+        emailVerificationService.resetPasswordWithToken(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+    }
+
+
 
 }

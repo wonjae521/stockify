@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // InventoryStatusLog 관련 비즈니스 로직 처리 서비스 클래스
@@ -17,14 +18,19 @@ public class InventoryStatusLogService {
 
     // 입출고 기록 생성
     public InventoryStatusLog createLog(InventoryStatusLogRequest request) {
-        // 재고 조회
+        // 재고 수가 0개일 때 로그 생성 불가
+        if (inventoryItemRepository.count() == 0) {
+            throw new IllegalStateException("입출고 기록을 남기기 위해서는 먼저 재고를 등록해야 합니다.");
+        }
+
         InventoryItem item = inventoryItemRepository.findById(request.getInventoryItemId())
-                .orElseThrow(() -> new RuntimeException("해당 재고 아이템을 찾을 수 없습니다. ID: " + request.getInventoryItemId()));
-        // 입출고 기록 생성
+                .orElseThrow(() -> new RuntimeException("해당 재고 아이템을 찾을 수 없습니다."));
+
         InventoryStatusLog log = InventoryStatusLog.builder()
                 .inventoryItem(item)
                 .quantity(request.getQuantity())
                 .action(request.getAction())
+                .timestamp(LocalDateTime.now())
                 .build();
 
         return inventoryStatusLogRepository.save(log);

@@ -19,7 +19,7 @@ public class InventoryStatusLog {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_id", nullable = false)
+    @JoinColumn(name = "item_id", nullable = true)
     private InventoryItem inventoryItem;  // 기록 대상 재고 품목
 
     @Enumerated(EnumType.STRING)
@@ -38,7 +38,9 @@ public class InventoryStatusLog {
 
     @PrePersist
     protected void onCreate() {
-        this.timestamp = LocalDateTime.now();
+        if (this.timestamp == null) {
+            this.timestamp = LocalDateTime.now();
+        }
     }
 
     // 입출고 작업 종류를 정의하는 열거형(Enum)

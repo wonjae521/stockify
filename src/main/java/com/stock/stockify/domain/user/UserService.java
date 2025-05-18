@@ -51,7 +51,7 @@ public class UserService {
         }
     }
     // 로그인
-    public String login(String username, String password) {
+    public LoginResponse login(String username, String password) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 사용자입니다."));
 
@@ -68,7 +68,9 @@ public class UserService {
                 .map(up -> up.getPermission().getName())
                 .toList();
 
-        return jwtUtil.generateToken(user.getUsername(), user.getRole().name(), permissions);
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name(), permissions);
+
+        return new LoginResponse(token, user.getUsername(), user.getRole().name(), user.isEmailVerified());
     }
     // 사용자 정보 찾기
     public Long getUserIdFromUserDetails(UserDetails userDetails) {

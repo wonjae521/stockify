@@ -18,6 +18,9 @@ public class OrderService {
 
     @Transactional
     public Long createOrder(OrderRequestDto dto) {
+        if (itemRepository.count() == 0) {
+            throw new IllegalStateException("주문을 생성하려면 먼저 재고를 등록해야 합니다.");
+        }
 
         Order order = Order.builder()
                 .customerName(dto.getCustomerName())
@@ -28,6 +31,7 @@ public class OrderService {
             if (itemDto.getQuantity() <= 0) {
                 throw new IllegalArgumentException("0 보다 많은 수량을 입력해야 합니다.");
             }
+            System.out.println("주문 요청된 item ID: " + itemDto.getItemId());
             InventoryItem item = itemRepository.findById(itemDto.getItemId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid item ID: " + itemDto.getItemId()));
 
