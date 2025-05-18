@@ -2,74 +2,88 @@ package com.stock.stockify.domain.order;
 
 import com.stock.stockify.domain.inventory.InventoryItem;
 import com.stock.stockify.domain.inventory.InventoryItemRepository;
+import com.stock.stockify.domain.order.OrderRequestDto;
+import com.stock.stockify.domain.order.OrderResponseDto;
+import com.stock.stockify.domain.order.Order;
+import com.stock.stockify.domain.order.OrderItem;
+import com.stock.stockify.domain.order.OrderRepository;
+import com.stock.stockify.domain.user.User;
+import com.stock.stockify.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 주문 생성 및 조회에 대한 비즈니스 로직을 처리하는 서비스 클래스입니다.
+ */
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final InventoryItemRepository itemRepository;
+    private final UserRepository userRepository;
 
+    /**
+     * 주문을 생성하는 메서드입니다.
+     * - 사용자와 재고 품목 정보를 검증하고, 주문 및 주문 품목을 생성하여 저장합니다.
+     *
+     * @param dto 주문 요청 정보
+     * @return 생성된 주문 ID
+     */
     @Transactional
-    public Long createOrder(OrderRequestDto dto) {
-        if (itemRepository.count() == 0) {
-            throw new IllegalStateException("주문을 생성하려면 먼저 재고를 등록해야 합니다.");
-        }
+    public UUID createOrder(OrderRequestDto dto) {
+        User user = userRepository.findById(dto.getUserId())
+            .orElseThrow(() -> new IllegalArgumentException("Invalid user"));
 
         Order order = Order.builder()
-                .customerName(dto.getCustomerName())
-                .customerPhone(dto.getCustomerPhone())
-                .build();
+            .user(user)
+            .note(dto.getNote())
+            .build();
 
+        // 주문 품목 목록 생성
         List<OrderItem> orderItems = dto.getItems().stream().map(itemDto -> {
-            if (itemDto.getQuantity() <= 0) {
-                throw new IllegalArgumentException("0 보다 많은 수량을 입력해야 합니다.");
-            }
-            System.out.println("주문 요청된 item ID: " + itemDto.getItemId());
             InventoryItem item = itemRepository.findById(itemDto.getItemId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid item ID: " + itemDto.getItemId()));
+                .orElseThrow(() -> new IllegalArgumentException("Invalid item"));
 
             return OrderItem.builder()
-                    .order(order)
-                    .item(item)
-                    .quantity(itemDto.getQuantity())
-                    .priceAtOrder(item.getPrice())
-                    .build();
+                .order(order)
+                .item(item)
+                .quantity(itemDto.getQuantity())
+                .build();
         }).collect(Collectors.toList());
 
         order.setOrderItems(orderItems);
         orderRepository.save(order);
-
         return order.getId();
     }
 
-    @Transactional(readOnly = true)
-    public OrderResponseDto getOrder(Long orderId) {
+    /**
+     * 특정 주문 정보를 조회하는 메서드입니다.
+     *
+     * @param orderId 조회할 주문 ID
+     * @return 주문 상세 정보를 담은 DTO
+     */
+    public OrderResponseDto getOrder(UUID orderId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-
-        List<OrderResponseDto.ItemDetail> itemDetails = order.getOrderItems().stream().map(orderItem ->
-                new OrderResponseDto.ItemDetail(
-                        orderItem.getItem().getId(),
-                        orderItem.getItem().getName(),
-                        orderItem.getQuantity(),
-                        orderItem.getPriceAtOrder()
-                )
-        ).collect(Collectors.toList());
+            .orElseThrow(() -> new NoSuchElementException("Order not found"));
 
         return OrderResponseDto.builder()
-                .orderId(order.getId())
-                .customerName(order.getCustomerName())
-                .customerPhone(order.getCustomerPhone())
-                .status(order.getStatus().name())
-                .createdAt(order.getCreatedAt())
-                .items(itemDetails)
-                .build();
+            .orderId(order.getId())
+            .userId(order.getUser().getId())
+            .orderDate(order.getOrderDate())
+            .status(order.getStatus().name())
+            .note(order.getNote())
+            .items(order.getOrderItems().stream().map(item ->
+                new OrderResponseDto.ItemDetail(
+                    item.getItem().getId(),
+                    item.getItem().getName(),
+                    item.getQuantity()
+                )
+            ).toList())
+            .build();
     }
 }

@@ -3,14 +3,15 @@ package com.stock.stockify.domain.order;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderRequestDto {
 
-    private String customerName;
-    private String customerPhone;
+    private Long userId;
+    private String note;
     private List<OrderItemDto> items;
 
     @Getter @Setter

@@ -38,6 +38,9 @@ public class InventoryItem {
     @Column(nullable = false)
     private Double price;
 
+    @Column(name = "warehouse_id", nullable = false)
+    private Long warehouseId;
+
     @Column(name = "expiration_date")
     private LocalDateTime expirationDate;
 

@@ -4,18 +4,18 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class OrderResponseDto {
-
-    private Long orderId;
-    private String customerName;
-    private String customerPhone;
+    private UUID orderId;
+    private Long userId;
+    private LocalDateTime orderDate;
     private String status;
-    private LocalDateTime createdAt;
+    private String note;
     private List<ItemDetail> items;
 
     @Getter @Setter
@@ -24,6 +24,5 @@ public class OrderResponseDto {
         private Long itemId;
         private String itemName;
         private int quantity;
-        private double priceAtOrder;
     }
 }

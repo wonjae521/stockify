@@ -1,8 +1,7 @@
-
-package com.stock.stockify.domain.order;
-
 import com.stock.stockify.domain.inventory.InventoryItem;
 import com.stock.stockify.domain.inventory.InventoryItemRepository;
+import com.stock.stockify.domain.order.OrderRequestDto;
+import com.stock.stockify.domain.order.OrderService;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +34,7 @@ public class OrderServiceTest {
         System.out.println("🔍 테스트용 아이템 ID: " + itemId);
 
         OrderRequestDto.OrderItemDto itemDto = new OrderRequestDto.OrderItemDto(itemId, 2);
-        OrderRequestDto request = new OrderRequestDto("디버그고객", "010-0000-0000", List.of(itemDto));
+        OrderRequestDto request = new OrderRequestDto(1L, "010-0000-0000", List.of(itemDto));
 
         // when: 주문 생성 (내부에서 item 조회 로그 출력됨)
         orderService.createOrder(request);
