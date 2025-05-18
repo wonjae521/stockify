@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stockify WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h2>📦 Stockify WebSocket 알림 테스트</h2>
+
+<label>제목: <input id="title" placeholder="title" /></label><br />
+<label>내용: <input id="content" placeholder="content" /></label><br />
+<button onclick="sendMessage()">알림 보내기</button>
+
+<h3>🔔 수신된 알림 목록:</h3>
+<ul id="messages"></ul>
+
+<script>
+    const socket = new SockJS("/ws-stockify");
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function () {
+      console.log("✅ 연결 성공");
+
+      stompClient.subscribe("/topic/notifications", function (message) {
+        const msg = JSON.parse(message.body);
+        const li = document.createElement("li");
+        li.textContent = `[${msg.title}] ${msg.content}`;
+        document.getElementById("messages").appendChild(li);
+      });
+    });
+
+    function sendMessage() {
+      const title = document.getElementById("title").value;
+      const content = document.getElementById("content").value;
+
+      stompClient.send("/app/notify", {}, JSON.stringify({ title, content }));
+    }
+</script>
+</body>
+</html>

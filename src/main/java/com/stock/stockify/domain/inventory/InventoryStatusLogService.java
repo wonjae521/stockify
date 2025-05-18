@@ -28,9 +28,11 @@ public class InventoryStatusLogService {
 
         InventoryStatusLog log = InventoryStatusLog.builder()
                 .inventoryItem(item)
-                .quantity(request.getQuantity())
                 .action(request.getAction())
+                .quantity(request.getQuantity())
+                .triggeredBy(null) // 사용자 정보 나중에 연동 예정
                 .timestamp(LocalDateTime.now())
+                .warehouseId(item.getWarehouseId()) // 이 부분이 있어야 동작 가능
                 .build();
 
         return inventoryStatusLogRepository.save(log);

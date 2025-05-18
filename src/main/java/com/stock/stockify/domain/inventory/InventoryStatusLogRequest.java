@@ -18,5 +18,5 @@ public class InventoryStatusLogRequest {
     private int quantity; // 입출고 수량
 
     @NotNull(message = "작업 종류는 필수입니다.")
-    private InventoryStatusLog.Action action; // 작업 종류 (입고, 출고, 조정)
+    private Action action; // 작업 종류 (입고, 출고, 조정)
 }

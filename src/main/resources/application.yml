@@ -47,3 +47,9 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.type: trace
+
+# ChatGPT API 키
+openai:
+  api:
+    key: sk-xxxxxxx   # 네 실제 OpenAI API 키
+

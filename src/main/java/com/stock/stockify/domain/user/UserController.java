@@ -82,6 +82,29 @@ public class UserController {
         return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
     }
 
+    // 비밀번호 변경 링크 전송
+    @PostMapping("/request-password-change")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> requestPasswordChange(HttpServletRequest servletRequest,
+                                                        @AuthenticationPrincipal UserDetails userDetails) {
+        String ip = servletRequest.getRemoteAddr();
+        Long userId = userService.getUserIdFromUserDetails(userDetails);
+        emailVerificationService.sendPasswordChangeToken(userId, ip);
+        return ResponseEntity.ok("비밀번호 변경 링크가 이메일로 전송되었습니다.");
+    }
 
+    // 비밀번호 변경 토큰 검증
+    @GetMapping("/verify-password-change-token")
+    public ResponseEntity<String> verifyPasswordChangeToken(@RequestParam String token) {
+        emailVerificationService.verifyPasswordChangeToken(token);
+        return ResponseEntity.ok("토큰이 유효합니다. 비밀번호 변경 화면으로 이동하세요.");
+    }
+
+    // 비밀번호 변경
+    @PatchMapping("/change-password")
+    public ResponseEntity<String> changePassword(@RequestBody PasswordChangeRequest request) {
+        emailVerificationService.changePasswordWithToken(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+    }
 
 }

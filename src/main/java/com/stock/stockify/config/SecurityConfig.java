@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,19 +38,37 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // URL별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll() // 회원가입 인증 없이 가능
-                        .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll() // 로그인 인증 없이 가능
+                        .requestMatchers(
+                                HttpMethod.POST, "/api/users/register"
+                        ).permitAll() // 회원가입 인증 없이 가능
+                        .requestMatchers(
+                                HttpMethod.POST, "/api/users/login"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/reports/generate").permitAll() // 보고서 생성 허용 - 로그인 인증 없이 가능
+
+                        // WebSocket 관련 예외 추가 (테스트용 HTML, 연결 엔드포인트, 메시지 송수신 경로 허용)
+                        .requestMatchers(
+                                "/ws-test.html",
+                                "/ws-stockify/**",
+                                "/topic/**",
+                                "/app/**"
+                        ).permitAll()
+
                         .requestMatchers("/api/admin/**").hasRole("ADMIN") // admin만 접근 가능
                         .requestMatchers("/api/staff/**").hasRole("STAFF") // staff만 접근 가능
                         .requestMatchers("/api/inventories/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/report-test.html").permitAll()
                         .anyRequest().authenticated()
                 )
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 등록
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 // 폼 로그인(formLogin) 비활성화 (토큰 인증을 쓰니까 필요 없음)
-                .formLogin(form -> form.disable())
+                // 폼 로그인(formLogin) 비활성화 (토큰 인증을 쓰니까 필요 없음)
+                .formLogin(form -> form.disable()) // 폼 로그인(formLogin) 비활성화 (토큰 인증을 쓰니까 필요 없음)
                 // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
-                .httpBasic(httpBasic -> httpBasic.disable());
+                // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
+                .httpBasic(basic -> basic.disable()); // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음);
+
 
         return http.build();
     }
@@ -69,6 +86,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config); // 모든 경로에 대해 위 설정 적용
         return new CorsFilter(source);
     }
+
     // CORS 설정 소스 메소드 -> 위 corsFilter와 비슷하지만, SecurityFilterChain 설정에서 직접 사용하는 버전
     private UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -81,6 +99,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
     // 비밀번호 암호화에 사용할 PasswordEncoder 빈 등록, BCrypt 해시 함수를 사용
     @Bean
     public PasswordEncoder passwordEncoder() {

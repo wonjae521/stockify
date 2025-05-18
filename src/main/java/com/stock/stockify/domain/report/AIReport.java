@@ -5,8 +5,6 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-// 데이터베이스 ai_reports 테이블과 매핑
-// 리포트 제목, 내용, 작성일시를 관리
 @Entity
 @Table(name = "ai_reports")
 @Getter
@@ -23,13 +21,21 @@ public class AIReport {
     @Column(nullable = false)
     private String title; // 리포트 제목
 
+    @Column(nullable = false)
+    private String type; // 리포트 유형 (예: WEEKLY_REPORT)
+
+    @Column(nullable = false)
+    private String periodStart; // 분석 시작일
+
+    @Column(nullable = false)
+    private String periodEnd; // 분석 종료일
+
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String content; // 리포트 본문 (내용)
+    private String content; // 리포트 본문 (GPT 결과)
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt; // 작성 시간
 
-    // 리포트 저장 전에 작성시간 자동 세팅
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

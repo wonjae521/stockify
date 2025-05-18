@@ -2,6 +2,7 @@ package com.stock.stockify.domain.user;
 
 import com.stock.stockify.global.email.EmailSenderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -130,6 +131,65 @@ public class EmailVerificationService {
         token.setVerifiedAt(LocalDateTime.now());
     }
 
+    // 비밀번호 변경 링크 전송
+    @Transactional
+    public void sendPasswordChangeToken(Long userId, String ipAddress) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다."));
 
+        EmailVerificationToken token = generateToken(userId, ipAddress, "PASSWORD_CHANGE", 15);
+
+        String link = "http://localhost:8080/api/users/verify-password-change-token?token=" + token.getToken();
+
+        emailSenderService.sendEmail(
+                user.getEmail(),
+                "[Stockify] 비밀번호 변경 인증",
+                "다음 링크를 클릭하여 비밀번호 변경을 완료하세요:\n" + link
+        );
+    }
+
+    // 비밀번호 변경용 토큰 검증
+    @Transactional(readOnly = true)
+    public void verifyPasswordChangeToken(String tokenString) {
+        EmailVerificationToken token = tokenRepository.findByToken(tokenString)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다."));
+
+        if (!token.getPurpose().equals("PASSWORD_CHANGE")) {
+            throw new IllegalStateException("비밀번호 변경용 토큰이 아닙니다.");
+        }
+
+        if (token.isVerified()) {
+            throw new IllegalStateException("이미 사용된 토큰입니다.");
+        }
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("토큰이 만료되었습니다.");
+        }
+    }
+
+    // 비밀번호 변경
+    @Transactional
+    public void changePasswordWithToken(String tokenString, String newPassword) {
+        EmailVerificationToken token = tokenRepository.findByToken(tokenString)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다."));
+
+        if (!token.getPurpose().equals("PASSWORD_CHANGE")) {
+            throw new IllegalStateException("비밀번호 변경용 토큰이 아닙니다.");
+        }
+
+        if (token.isVerified()) {
+            throw new IllegalStateException("이미 사용된 토큰입니다.");
+        }
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("토큰이 만료되었습니다.");
+        }
+
+        User user = token.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        token.setVerified(true);
+        token.setVerifiedAt(LocalDateTime.now());
+    }
 
 }
