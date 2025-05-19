@@ -18,7 +18,7 @@ public class AdminUserService {
     private final UserWarehouseRoleRepository userWarehouseRoleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // 1. 창고 생성
+    // 창고 생성
     @Transactional
     public Warehouse createWarehouse(String name, String description) {
         if (warehouseRepository.existsByName(name)) {
@@ -30,7 +30,7 @@ public class AdminUserService {
                 .build());
     }
 
-    // 2. 사용자 등록 + 창고 권한 연결
+    // 사용자 등록 + 창고 권한 연결
     @Transactional
     public User registerUserWithWarehouse(String username, String password, String email, UserRole role,
                                           List<WarehousePermissionRequest> warehousePermissions) {

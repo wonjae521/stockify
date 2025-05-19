@@ -19,7 +19,7 @@ public class AdminUserController {
 
     private final AdminUserService adminUserService;
 
-    // 1. 창고 생성
+    // 창고 생성
     @PostMapping("/warehouses")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Warehouse> createWarehouse(@RequestParam String name,
@@ -28,7 +28,7 @@ public class AdminUserController {
         return ResponseEntity.ok(created);
     }
 
-    // 2. 사용자 등록 (직원/보조 관리자) + 권한 설정
+    // 사용자 등록 (직원/보조 관리자) + 권한 설정
     @PostMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> registerUserWithWarehouse(@RequestParam String username,
