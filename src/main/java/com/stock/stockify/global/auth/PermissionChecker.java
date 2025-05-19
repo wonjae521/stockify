@@ -1,47 +1,34 @@
 package com.stock.stockify.global.auth;
 
-import com.stock.stockify.domain.warehouse.UserWarehouseRole;
-import com.stock.stockify.domain.warehouse.UserWarehouseRoleRepository;
-import lombok.RequiredArgsConstructor;
+import com.stock.stockify.domain.user.Permission;
+import com.stock.stockify.domain.user.RoleType;
+import com.stock.stockify.domain.user.User;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
-@RequiredArgsConstructor
+import java.util.Objects;
+
+// 사용자 권한 검사하는 컴포넌트 클래스, 창고 일치 여부, 역할 기반 권한 검사 수행
+@Service
 public class PermissionChecker {
 
-    private final UserWarehouseRoleRepository roleRepository;
+    // 특정 창고에 대한 권한 보유하고 있는지 검사, 없다면 AccessDeniedException 발생
+    public void checkAccessToWarehouse(User user, Long warehouseId, Permission permission) { // user: 검사 대상 사용자, warehouseId: 접근 대상 창고 ID, permission: 요구되는 권한
+        if (user.getRoleType() == RoleType.ADMIN) return;
 
-    public void checkInventoryAccess(Long userId, Long warehouseId) {
-        UserWarehouseRole role = getRole(userId, warehouseId);
-        if (!role.isCanManageInventory()) {
-            throw new AccessDeniedException("재고 관리 권한이 없습니다.");
+        if (user.getWarehouse() == null || !Objects.equals(user.getWarehouse().getId(), warehouseId)) {
+            throw new AccessDeniedException("다른 창고에 대한 접근입니다.");
+        }
+
+        if (!user.getRoleType().hasPermission(permission)) {
+            throw new AccessDeniedException("요청 권한이 부족합니다: " + permission);
         }
     }
 
-    public void checkOrderAccess(Long userId, Long warehouseId) {
-        UserWarehouseRole role = getRole(userId, warehouseId);
-        if (!role.isCanManageOrders()) {
-            throw new AccessDeniedException("주문 관리 권한이 없습니다.");
+    // 글로벌 권한 검사(ex.관리자 페이지 접근 등)
+    public void checkGlobalAccess(User user, Permission permission) {
+        if (!user.getRoleType().hasPermission(permission)) {
+            throw new AccessDeniedException("전역 권한이 부족합니다: " + permission);
         }
-    }
-
-    public void checkReportAccess(Long userId, Long warehouseId) {
-        UserWarehouseRole role = getRole(userId, warehouseId);
-        if (!role.isCanViewReports()) {
-            throw new AccessDeniedException("보고서 조회 권한이 없습니다.");
-        }
-    }
-
-    // 접근 권한만 확인(조회처럼 단순 존재 여부만 확인)
-    public void checkAccessToWarehouse(Long userId, Long warehouseId) {
-        roleRepository.findByUserIdAndWarehouseId(userId, warehouseId)
-                .orElseThrow(() -> new AccessDeniedException("해당 창고에 대한 접근 권한이 없습니다."));
-    }
-
-    // 권한 객체 조회(수정/삭제 등에서 권한 속성 확인)
-    private UserWarehouseRole getRole(Long userId, Long warehouseId) {
-        return roleRepository.findByUserIdAndWarehouseId(userId, warehouseId)
-                .orElseThrow(() -> new AccessDeniedException("해당 창고에 대한 접근 권한이 없습니다."));
     }
 }

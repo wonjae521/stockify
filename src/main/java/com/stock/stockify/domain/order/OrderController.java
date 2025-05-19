@@ -3,8 +3,6 @@ package com.stock.stockify.domain.order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
 /**
  * 주문(Order) 관련 API 요청을 처리하는 컨트롤러입니다.
  * - 주문 생성

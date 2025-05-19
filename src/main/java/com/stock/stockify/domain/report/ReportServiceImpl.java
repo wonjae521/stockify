@@ -1,12 +1,5 @@
 package com.stock.stockify.domain.report;
 
-import com.stock.stockify.domain.report.AIReport;
-import com.stock.stockify.domain.report.ReportType;
-import com.stock.stockify.domain.report.ReportRequestDto;
-import com.stock.stockify.domain.report.ReportResponseDto;
-import com.stock.stockify.domain.report.ReportPromptFactory;
-import com.stock.stockify.domain.report.AIReportRepository;
-import com.stock.stockify.domain.report.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +12,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ReportResponseDto generateReport(ReportRequestDto request) {
-        // TODO: 여기에 실제 통계 데이터를 JSON으로 생성하는 로직 추가 필요
+        // 여기에 실제 통계 데이터를 JSON으로 생성하는 로직 추가 필요
         String jsonData = "{ /* 통계 데이터 JSON 변환 결과 */ }";
 
         // 프롬프트 생성

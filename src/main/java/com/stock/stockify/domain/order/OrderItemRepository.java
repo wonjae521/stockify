@@ -1,6 +1,5 @@
 package com.stock.stockify.domain.order;
 
-import com.stock.stockify.domain.order.OrderItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;

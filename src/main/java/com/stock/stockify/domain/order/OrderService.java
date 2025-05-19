@@ -2,16 +2,11 @@ package com.stock.stockify.domain.order;
 
 import com.stock.stockify.domain.inventory.InventoryItem;
 import com.stock.stockify.domain.inventory.InventoryItemRepository;
-import com.stock.stockify.domain.order.OrderRequestDto;
-import com.stock.stockify.domain.order.OrderResponseDto;
-import com.stock.stockify.domain.order.Order;
-import com.stock.stockify.domain.order.OrderItem;
-import com.stock.stockify.domain.order.OrderRepository;
 import com.stock.stockify.domain.user.User;
-import com.stock.stockify.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.stock.stockify.domain.user.UserRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,7 +24,7 @@ public class OrderService {
 
     /**
      * 주문을 생성하는 메서드입니다.
-     * - 사용자와 재고 품목 정보를 검증하고, 주문 및 주문 품목을 생성하여 저장합니다.
+     * - 사용자와 재고 품목 정보를 검증하고, 주문 및 주문 품목을 생성하여 저장합니다.X
      *
      * @param dto 주문 요청 정보
      * @return 생성된 주문 ID

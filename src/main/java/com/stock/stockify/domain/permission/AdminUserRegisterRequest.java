@@ -1,5 +1,6 @@
-package com.stock.stockify.domain.user;
+package com.stock.stockify.domain.permission;
 
+import com.stock.stockify.domain.user.RoleType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,7 +11,7 @@ import lombok.Setter;
 // 아이디, 비밀번호, 역할(role)을 입력받는다
 @Setter
 @Getter
-public class UserRegisterRequest {
+public class AdminUserRegisterRequest {
 
     @NotBlank(message = "아이디는 필수입니다.")
     @Size(min = 4, max = 20, message = "아이디는 4~20자여야 합니다.")
@@ -25,6 +26,8 @@ public class UserRegisterRequest {
 
     @NotBlank(message = "email을 입력해주세요.")
     private String email; // 이메일
+
+    private Long warehouseId; // 창고 ID
 
 }
 

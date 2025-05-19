@@ -1,5 +1,6 @@
 package com.stock.stockify.domain.user;
 
+import com.stock.stockify.domain.warehouse.Warehouse;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -20,7 +21,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // INT 자동 증가 (PK)
+    private Long id; // 사용자 고유 ID (PK)
 
     @Column(nullable = false, unique = true, length = 100)
     private String username; // 로그인용 아이디
@@ -30,19 +31,20 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role; // 사용자 역할
+    private RoleType roleType; // 사용자 역할 (ADMIN, SUBADMIN, STAFF)
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt; // 가입 날짜
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserPermission> userPermissions = new ArrayList<>(); // 사용자 권한
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id", nullable = true)
+    private Warehouse warehouse;  // 사용자가 소속된 창고
 
     @Column(nullable = false, unique = true)
     private String email; // 이메일
 
     @Column(nullable = false)
     private boolean emailVerified = false; // 이메일 인증 여부
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt; // 가입 일자
 
     @PrePersist
     protected void onCreate() { // DB에 현재 시간 저장

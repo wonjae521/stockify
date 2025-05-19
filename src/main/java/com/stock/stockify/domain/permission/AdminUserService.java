@@ -15,10 +15,9 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final WarehouseRepository warehouseRepository;
-    private final UserWarehouseRoleRepository userWarehouseRoleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // 1. 창고 생성
+    // 창고 생성
     @Transactional
     public Warehouse createWarehouse(String name, String description) {
         if (warehouseRepository.existsByName(name)) {
@@ -30,44 +29,25 @@ public class AdminUserService {
                 .build());
     }
 
-    // 2. 사용자 등록 + 창고 권한 연결
+    // 사용자 등록 + 창고 권한 연결
     @Transactional
-    public User registerUserWithWarehouse(String username, String password, String email, UserRole role,
-                                          List<WarehousePermissionRequest> warehousePermissions) {
+    public User registerUserWithWarehouse(String username, String password, String email, RoleType role, Long warehouseId) {
 
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("이미 존재하는 사용자입니다.");
         }
 
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                .orElseThrow(() -> new IllegalArgumentException("창고를 찾을 수 없습니다."));
+
         User user = User.builder()
                 .username(username)
                 .password(passwordEncoder.encode(password))
                 .email(email)
-                .emailVerified(false)  // 기본값
-                .role(role)
+                .roleType(role)
+                .warehouse(warehouse)
                 .build();
 
-        userRepository.save(user);
-
-        for (WarehousePermissionRequest wp : warehousePermissions) {
-            Warehouse warehouse = warehouseRepository.findById(wp.getWarehouseId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 창고 ID: " + wp.getWarehouseId()));
-
-            if (userWarehouseRoleRepository.existsByUserIdAndWarehouseId(user.getId(), warehouse.getId())) {
-                throw new IllegalArgumentException("이미 매핑된 창고입니다.");
-            }
-
-            UserWarehouseRole roleMapping = UserWarehouseRole.builder()
-                    .user(user)
-                    .warehouse(warehouse)
-                    .canManageInventory(wp.isCanManageInventory())
-                    .canManageOrders(wp.isCanManageOrders())
-                    .canViewReports(wp.isCanViewReports())
-                    .build();
-
-            userWarehouseRoleRepository.save(roleMapping);
-        }
-
-        return user;
+        return userRepository.save(user);
     }
 }

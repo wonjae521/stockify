@@ -1,6 +1,5 @@
 package com.stock.stockify.domain.report;
 
-import com.stock.stockify.domain.report.GPTService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +9,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+// GPT 호출하는 클래스
 @Slf4j
 @Service
 @RequiredArgsConstructor

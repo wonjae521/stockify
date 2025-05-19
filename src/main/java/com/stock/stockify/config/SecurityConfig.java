@@ -15,6 +15,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+
 import java.util.List;
 
 // Spring Security 보안 설정 클래스
@@ -38,13 +39,22 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // URL별 접근 권한 설정
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                HttpMethod.POST, "/api/users/register"
-                        ).permitAll() // 회원가입 인증 없이 가능
-                        .requestMatchers(
-                                HttpMethod.POST, "/api/users/login"
-                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users/register").permitAll() // 회원가입 인증 없이 가능
+                        .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
+                        .requestMatchers("/api/email/**").permitAll() // 이메일 인증 JWT 없이 가능
                         .requestMatchers(HttpMethod.POST, "/api/reports/generate").permitAll() // 보고서 생성 허용 - 로그인 인증 없이 가능
+                        .requestMatchers(HttpMethod.POST, "/api/users/request-password-reset").permitAll() // 비밀번호 변경 , 메일 인증용 토큰 요청
+                        .requestMatchers(HttpMethod.PATCH, "/api/users/reset-password").permitAll() // 비밀번호 재설정 JWT 없이 가능
+                        .requestMatchers(HttpMethod.GET, "/api/users/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/change-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/email/change-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/email/change-password/submit").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/change-password-success").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/change-password-success").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/email/verify-password-token").permitAll()
+
+
 
                         // WebSocket 관련 예외 추가 (테스트용 HTML, 연결 엔드포인트, 메시지 송수신 경로 허용)
                         .requestMatchers(

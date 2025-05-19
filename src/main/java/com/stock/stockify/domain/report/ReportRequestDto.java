@@ -14,6 +14,4 @@ public class ReportRequestDto {
     private Long warehouseId;
     private String periodStart;
     private String periodEnd;
-
-    // Getter/Setter 생략
 }

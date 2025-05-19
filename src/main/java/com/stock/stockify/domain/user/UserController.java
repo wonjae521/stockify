@@ -1,5 +1,6 @@
 package com.stock.stockify.domain.user;
 
+import com.stock.stockify.global.mail.EmailService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -20,11 +21,12 @@ public class UserController {
 
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
+    private final EmailService emailService;
 
     // 회원가입
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody @Valid UserRegisterRequest request) {
-        userService.registerUser(request.getUsername(), request.getPassword(), request.getRole());
+        userService.registerUser(request.getUsername(), request.getPassword(), request.getRole(), request.getEmail());
         return ResponseEntity.ok("회원가입 완료");
     }
 
@@ -70,7 +72,10 @@ public class UserController {
         String ip = servletRequest.getRemoteAddr();
 
         // 사용자 확인 후 이메일 전송
-        emailVerificationService.sendPasswordResetToken(request.getUsername(), request.getEmail(), ip);
+        Long userId = userService.getUserIdByUsernameAndEmail(request.getUsername(), request.getEmail());
+        emailVerificationService.generateToken(userId, ip, "PASSWORD_RESET", 15);
+
+
 
         return ResponseEntity.ok("비밀번호 재설정 링크가 이메일로 전송되었습니다.");
     }
@@ -78,7 +83,7 @@ public class UserController {
     // 비밀번호 초기화
     @PatchMapping("/reset-password")
     public ResponseEntity<String> resetPassword(@RequestBody PasswordResetConfirmRequest request) {
-        emailVerificationService.resetPasswordWithToken(request.getToken(), request.getNewPassword());
+        emailVerificationService.changePasswordWithToken(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
     }
 
@@ -89,14 +94,15 @@ public class UserController {
                                                         @AuthenticationPrincipal UserDetails userDetails) {
         String ip = servletRequest.getRemoteAddr();
         Long userId = userService.getUserIdFromUserDetails(userDetails);
-        emailVerificationService.sendPasswordChangeToken(userId, ip);
+        emailVerificationService.generateToken(userId, ip, "PASSWORD_CHANGE", 15);
+
         return ResponseEntity.ok("비밀번호 변경 링크가 이메일로 전송되었습니다.");
     }
 
     // 비밀번호 변경 토큰 검증
     @GetMapping("/verify-password-change-token")
     public ResponseEntity<String> verifyPasswordChangeToken(@RequestParam String token) {
-        emailVerificationService.verifyPasswordChangeToken(token);
+        emailVerificationService.verifyPasswordToken(token);
         return ResponseEntity.ok("토큰이 유효합니다. 비밀번호 변경 화면으로 이동하세요.");
     }
 
@@ -106,5 +112,4 @@ public class UserController {
         emailVerificationService.changePasswordWithToken(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
     }
-
 }

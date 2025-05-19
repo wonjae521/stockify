@@ -5,7 +5,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-// 위치 기록 Entity
+// 사용자 위치 기록 엔티티
 @Entity
 @Table(name = "rtls_user_locations")
 @Getter @Setter

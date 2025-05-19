@@ -1,5 +1,7 @@
 package com.stock.stockify.domain.inventory;
 
+import com.stock.stockify.domain.user.Permission;
+import com.stock.stockify.domain.user.User;
 import com.stock.stockify.domain.user.UserService;
 import com.stock.stockify.global.auth.PermissionChecker;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +29,9 @@ public class InventoryItemController {
                                                       @RequestBody InventoryItemRequest request,
                                                       @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = userService.getUserIdFromUserDetails(userDetails);
-
+        User user = userService.getUserFromUserDetails(userDetails);
         // 권한 확인
-        permissionChecker.checkInventoryAccess(userId, warehouseId);
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_WRITE);
 
         // 재고 등록
         inventoryItemService.createInventoryItem(warehouseId, request);
@@ -41,8 +42,9 @@ public class InventoryItemController {
     @GetMapping("/warehouses/{warehouseId}/items")
     public ResponseEntity<List<InventoryItemResponse>> getItems(@PathVariable Long warehouseId,
                                                                 @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = userService.getUserIdFromUserDetails(userDetails);
-        permissionChecker.checkAccessToWarehouse(userId, warehouseId); // 단순 접근 권한만 확인 (읽기니까 권한 플래그 체크는 안함)
+
+        User user = userService.getUserFromUserDetails(userDetails);
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_WRITE); // 단순 접근 권한만 확인 (읽기니까 권한 플래그 체크는 안함)
 
         return ResponseEntity.ok(inventoryItemService.getItemsByWarehouse(warehouseId));
     }
@@ -53,10 +55,10 @@ public class InventoryItemController {
                                              @PathVariable Long itemId,
                                              @RequestBody InventoryItemRequest request,
                                              @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = userService.getUserIdFromUserDetails(userDetails);
 
+        User user = userService.getUserFromUserDetails(userDetails);
         // 수정 권한 확인
-        permissionChecker.checkInventoryAccess(userId, warehouseId);
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_WRITE);
 
         inventoryItemService.updateItem(warehouseId, itemId, request);
         return ResponseEntity.ok("재고 수정 완료");
@@ -67,10 +69,10 @@ public class InventoryItemController {
     public ResponseEntity<String> deleteItem(@PathVariable Long warehouseId,
                                              @PathVariable Long itemId,
                                              @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = userService.getUserIdFromUserDetails(userDetails);
 
+        User user = userService.getUserFromUserDetails(userDetails);
         // 삭제 권한 확인
-        permissionChecker.checkInventoryAccess(userId, warehouseId);
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_WRITE);
 
         inventoryItemService.deleteItem(warehouseId, itemId);
         return ResponseEntity.ok("재고 삭제 완료");

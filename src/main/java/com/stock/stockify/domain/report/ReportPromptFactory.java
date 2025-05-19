@@ -1,7 +1,5 @@
 package com.stock.stockify.domain.report;
 
-import com.stock.stockify.domain.report.ReportType;
-
 public class ReportPromptFactory {
     public static String generatePrompt(ReportType type, String jsonData, String start, String end) {
         switch (type) {

@@ -13,18 +13,19 @@ public class RtlsLocationService {
     private final RtlsItemLocationRepository itemRepo;
     private final RtlsUserLocationRepository userRepo;
 
-    public List<RtlsItemLocation> getItemLocationHistory(Long itemId) {
+    public List<RtlsItemLocation> getItemLocationHistory(Long itemId) { // DB 참조
         return itemRepo.findByItemIdOrderByDetectedAtDesc(itemId);
     }
 
-    public List<RtlsUserLocation> getUserLocationHistory(Long userId) {
+    public List<RtlsUserLocation> getUserLocationHistory(Long userId) { // DB 참조
         return userRepo.findByUserIdOrderByDetectedAtDesc(userId);
     }
 
+    // 재고 위치 저장
     public void saveItemLocation(RtlsItemLocation location) {
         itemRepo.save(location);
     }
-
+    // 사용자 위치 저장
     public void saveUserLocation(RtlsUserLocation location) {
         userRepo.save(location);
     }

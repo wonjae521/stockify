@@ -14,5 +14,5 @@ import java.util.Map;
 public class ReportResponseDto {
     private String summary;
     private Map<String, Object> chartData; // 이 필드 필요 없으면 null 처리 가능
-    private String rawGptMessage;
+    private String GptMessage;
 }
