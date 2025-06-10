@@ -1,9 +1,9 @@
 package com.stock.stockify.domain.user;
 
-import com.stock.stockify.global.email.EmailSenderService;
+// import com.stock.stockify.global.email.EmailSenderService;
 import com.stock.stockify.global.mail.EmailService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+// import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

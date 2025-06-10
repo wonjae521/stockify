@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -31,23 +32,38 @@ public class AdminUserService {
 
     // 사용자 등록 + 창고 권한 연결
     @Transactional
-    public User registerUserWithWarehouse(String username, String password, String email, RoleType role, Long warehouseId) {
+    public UserResponseDto registerUserWithWarehouse(String username, String password, String email, RoleType role, List<Long> warehouseIds) {
 
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("이미 존재하는 사용자입니다.");
         }
 
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new IllegalArgumentException("창고를 찾을 수 없습니다."));
-
-        User user = User.builder()
+        User user = userRepository.save(User.builder()
                 .username(username)
                 .password(passwordEncoder.encode(password))
                 .email(email)
                 .roleType(role)
-                .warehouse(warehouse)
-                .build();
+                .userWarehouseRoles(new ArrayList<>())
+                //.warehouse(warehouse)
+                .build());
 
-        return userRepository.save(user);
+        List<UserWarehouseRole> roles = new ArrayList<>();
+        for (Long warehouseId : warehouseIds) {
+            Warehouse warehouse = warehouseRepository.findById(warehouseId)
+                    .orElseThrow(() -> new IllegalArgumentException("없는 창고입니다."));
+
+            roles.add(UserWarehouseRole.builder()
+                    .user(user)
+                    .warehouse(warehouse)
+                    .roleType(role)
+                    .build());
+        }
+
+        // 저장
+        List<Long> warehouseIdsResult = roles.stream()
+                .map(r -> r.getWarehouse().getId())
+                .toList();
+
+        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRoleType(), warehouseIdsResult);
     }
 }

@@ -1,6 +1,6 @@
 package com.stock.stockify.domain.user;
 
-import com.stock.stockify.domain.warehouse.Warehouse;
+import com.stock.stockify.domain.warehouse.UserWarehouseRole;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -33,9 +33,14 @@ public class User {
     @Column(nullable = false)
     private RoleType roleType; // 사용자 역할 (ADMIN, SUBADMIN, STAFF)
 
+    /**
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id", nullable = true)
     private Warehouse warehouse;  // 사용자가 소속된 창고
+     */
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserWarehouseRole> userWarehouseRoles = new ArrayList<>();
 
     @Column(nullable = false, unique = true)
     private String email; // 이메일

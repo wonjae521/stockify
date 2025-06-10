@@ -38,7 +38,6 @@ public class UserService {
                 .password(encodedPassword)
                 .roleType(role)
                 .email(email)
-                .warehouse(null)
                 .build();
 
         userRepository.save(user);

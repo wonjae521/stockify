@@ -16,7 +16,7 @@ public class AIReport {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id; // 리포트id
 
     @Column(nullable = false)
     private String title; // 리포트 제목

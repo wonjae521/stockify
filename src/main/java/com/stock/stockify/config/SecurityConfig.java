@@ -43,6 +43,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                         .requestMatchers("/api/email/**").permitAll() // 이메일 인증 JWT 없이 가능
                         .requestMatchers(HttpMethod.POST, "/api/reports/generate").permitAll() // 보고서 생성 허용 - 로그인 인증 없이 가능
+
+                        // 인증이 필요한 영역
+                        .requestMatchers("/api/inventories/**").authenticated()
+                        .requestMatchers("/api/orders/**").authenticated()
+                        .requestMatchers("/api/reports/**").authenticated()
+
                         .requestMatchers(HttpMethod.POST, "/api/users/request-password-reset").permitAll() // 비밀번호 변경 , 메일 인증용 토큰 요청
                         .requestMatchers(HttpMethod.PATCH, "/api/users/reset-password").permitAll() // 비밀번호 재설정 JWT 없이 가능
                         .requestMatchers(HttpMethod.GET, "/api/users/reset-password").permitAll()
@@ -51,9 +57,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/email/change-password/submit").permitAll()
                         .requestMatchers(HttpMethod.POST, "/change-password-success").permitAll()
                         .requestMatchers(HttpMethod.GET, "/change-password-success").permitAll()
-
                         .requestMatchers(HttpMethod.GET, "/api/email/verify-password-token").permitAll()
-
 
 
                         // WebSocket 관련 예외 추가 (테스트용 HTML, 연결 엔드포인트, 메시지 송수신 경로 허용)
@@ -68,6 +72,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/staff/**").hasRole("STAFF") // staff만 접근 가능
                         .requestMatchers("/api/inventories/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/report-test.html").permitAll()
+
+                        // 그 외는 모두 인증 필요
                         .anyRequest().authenticated()
                 )
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 등록

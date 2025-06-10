@@ -3,6 +3,7 @@ package com.stock.stockify.global.auth;
 import com.stock.stockify.domain.user.Permission;
 import com.stock.stockify.domain.user.RoleType;
 import com.stock.stockify.domain.user.User;
+import com.stock.stockify.domain.warehouse.UserWarehouseRole;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +17,13 @@ public class PermissionChecker {
     public void checkAccessToWarehouse(User user, Long warehouseId, Permission permission) { // user: 검사 대상 사용자, warehouseId: 접근 대상 창고 ID, permission: 요구되는 권한
         if (user.getRoleType() == RoleType.ADMIN) return;
 
-        if (user.getWarehouse() == null || !Objects.equals(user.getWarehouse().getId(), warehouseId)) {
-            throw new AccessDeniedException("다른 창고에 대한 접근입니다.");
+        UserWarehouseRole role = user.getUserWarehouseRoles().stream()
+                .filter(r -> Objects.equals(r.getWarehouse().getId(), warehouseId))
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("창고 접근 권한이 없습니다."));
+
+        if (!role.getRoleType().hasPermission(permission)) {
+            throw new AccessDeniedException("요청 권한이 부족합니다: " + permission);
         }
 
         if (!user.getRoleType().hasPermission(permission)) {

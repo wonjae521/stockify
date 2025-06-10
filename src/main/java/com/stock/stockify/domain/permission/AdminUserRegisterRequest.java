@@ -1,11 +1,18 @@
 package com.stock.stockify.domain.permission;
 
 import com.stock.stockify.domain.user.RoleType;
+import com.stock.stockify.domain.warehouse.UserWarehouseRole;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 // 회원가입 요청 데이터를 받는 DTO
 // 아이디, 비밀번호, 역할(role)을 입력받는다
@@ -27,7 +34,7 @@ public class AdminUserRegisterRequest {
     @NotBlank(message = "email을 입력해주세요.")
     private String email; // 이메일
 
-    private Long warehouseId; // 창고 ID
-
+    @NotEmpty
+    private List<Long> warehouseIds; // 창고 ID, 창고 위치 수정하는 로직 추가
 }
 

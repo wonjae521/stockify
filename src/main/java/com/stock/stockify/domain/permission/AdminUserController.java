@@ -2,6 +2,7 @@ package com.stock.stockify.domain.permission;
 
 import com.stock.stockify.domain.user.User;
 import com.stock.stockify.domain.user.UserRegisterRequest;
+import com.stock.stockify.domain.user.UserResponseDto;
 import com.stock.stockify.domain.warehouse.Warehouse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,13 +29,13 @@ public class AdminUserController {
     // 사용자 등록 (직원/보조 관리자) + 창고 연결
     @PostMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> registerUserWithWarehouse(@RequestBody @Valid AdminUserRegisterRequest request) {
-        User createdUser = adminUserService.registerUserWithWarehouse(
+    public ResponseEntity<UserResponseDto> registerUserWithWarehouse(@RequestBody @Valid AdminUserRegisterRequest request) {
+        UserResponseDto createdUser = adminUserService.registerUserWithWarehouse(
                 request.getUsername(),
                 request.getPassword(),
                 request.getEmail(),
                 request.getRole(),
-                request.getWarehouseId()
+                request.getWarehouseIds()
         );
         return ResponseEntity.ok(createdUser);
     }

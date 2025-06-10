@@ -44,7 +44,8 @@ public class InventoryItemController {
                                                                 @AuthenticationPrincipal UserDetails userDetails) {
 
         User user = userService.getUserFromUserDetails(userDetails);
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_WRITE); // 단순 접근 권한만 확인 (읽기니까 권한 플래그 체크는 안함)
+        // 권한 확인
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_READ); // 단순 접근 권한만 확인 (읽기니까 권한 플래그 체크는 안함)
 
         return ResponseEntity.ok(inventoryItemService.getItemsByWarehouse(warehouseId));
     }
@@ -72,7 +73,7 @@ public class InventoryItemController {
 
         User user = userService.getUserFromUserDetails(userDetails);
         // 삭제 권한 확인
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_WRITE);
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.INVENTORY_DELETE);
 
         inventoryItemService.deleteItem(warehouseId, itemId);
         return ResponseEntity.ok("재고 삭제 완료");

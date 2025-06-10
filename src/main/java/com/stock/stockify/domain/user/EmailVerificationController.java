@@ -18,6 +18,7 @@ public class EmailVerificationController {
     private final EmailVerificationService verificationService;
     private final com.stock.stockify.global.email.EmailSenderService emailSenderService;
 
+    /**
     // 회원가입 또는 이메일 인증 요청 시 호출
     @PostMapping("/send-verification")
     public String sendEmailVerification(@RequestParam Long userId, HttpServletRequest request) {
@@ -39,6 +40,7 @@ public class EmailVerificationController {
 
         return "이메일 인증 링크가 전송되었습니다.";
     }
+    */
 
     // 인증 링크 클릭 시 호출되는 API
     @GetMapping("/verify")
