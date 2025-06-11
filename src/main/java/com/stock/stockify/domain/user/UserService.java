@@ -1,7 +1,7 @@
 package com.stock.stockify.domain.user;
 
-import com.stock.stockify.domain.warehouse.Warehouse;
-import com.stock.stockify.domain.warehouse.WarehouseRepository;
+import com.stock.stockify.domain.permission.Role;
+import com.stock.stockify.domain.permission.RoleRepository;
 import com.stock.stockify.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 // 사용자(User) 관련 비즈니스 로직 처리 서비스
 @Service
@@ -21,22 +20,23 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final WarehouseRepository warehouseRepository;
     private final JwtUtil jwtUtil;
     private final EmailVerificationService emailVerificationService;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final RoleRepository roleRepository;
 
     // 회원가입
-    public void registerUser(String username, String password, RoleType role, String email) {
+    public void registerUser(String username, String password, Long roleId, String email) {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("이미 존재하는 사용자입니다.");
         }
-        String encodedPassword = passwordEncoder.encode(password);
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("역할이 존재하지 않습니다."));
 
         User user = User.builder()
                 .username(username)
-                .password(encodedPassword)
-                .roleType(role)
+                .password(passwordEncoder.encode(password))
+                .role(role)
                 .email(email)
                 .build();
 
@@ -70,9 +70,9 @@ public class UserService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRoleType().name());
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().getName());
 
-        return new LoginResponse(token, user.getUsername(), user.getRoleType().name(), user.isEmailVerified());
+        return new LoginResponse(token, user.getUsername(), user.getRole().getName(), user.isEmailVerified());
     }
 
     // 사용자 정보 찾기(사용자ID)

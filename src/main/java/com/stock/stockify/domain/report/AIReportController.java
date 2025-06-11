@@ -1,6 +1,7 @@
 package com.stock.stockify.domain.report;
 
-import com.stock.stockify.domain.user.Permission;
+import com.stock.stockify.domain.permission.Permission;
+import com.stock.stockify.domain.permission.PermissionRepository;
 import com.stock.stockify.domain.user.User;
 import com.stock.stockify.domain.user.UserService;
 import com.stock.stockify.global.auth.PermissionChecker;
@@ -23,6 +24,7 @@ public class AIReportController {
     private final AIReportService aiReportService;
     private final PermissionChecker permissionChecker;
     private final UserService userService;
+    private final PermissionRepository permissionRepository;
 
     // 리포트 생성
     @PostMapping
@@ -30,8 +32,11 @@ public class AIReportController {
                                                  @RequestBody @Valid AIReportRequest request,
                                                  @AuthenticationPrincipal UserDetails userDetails) {
 
+        // 권한 확인
         User user = userService.getUserFromUserDetails(userDetails);
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.REPORT_MANAGE);
+        Permission permission = permissionRepository.findByName("REPORT_MANAGE")
+                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission);
 
         AIReport report = AIReport.builder()
                 .title(request.getTitle())
@@ -45,8 +50,11 @@ public class AIReportController {
     public ResponseEntity<List<AIReport>> getAllReports(@PathVariable Long warehouseId,
                                                         @AuthenticationPrincipal UserDetails userDetails) {
 
+        // 권한 확인
         User user = userService.getUserFromUserDetails(userDetails);
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.REPORT_VIEW);
+        Permission permission = permissionRepository.findByName("REPORT_VIEW")
+                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission);
 
         return ResponseEntity.ok(aiReportService.getAllReports());
     }
@@ -56,8 +64,11 @@ public class AIReportController {
     public ResponseEntity<AIReport> getReportById(@PathVariable Long id, Long warehouseId,
                                                   @AuthenticationPrincipal UserDetails userDetails) {
 
+        // 권한 확인
         User user = userService.getUserFromUserDetails(userDetails);
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.REPORT_VIEW);
+        Permission permission = permissionRepository.findByName("REPORT_VIEW")
+                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission);
 
         return ResponseEntity.ok(aiReportService.getReportById(id));
     }
@@ -67,8 +78,11 @@ public class AIReportController {
     public ResponseEntity<Void> deleteReport(@PathVariable Long id, Long warehouseId,
                                              @AuthenticationPrincipal UserDetails userDetails) {
 
+        // 권한 확인
         User user = userService.getUserFromUserDetails(userDetails);
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, Permission.REPORT_MANAGE);
+        Permission permission = permissionRepository.findByName("REPORT_MANAGE")
+                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
+        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission);
 
         aiReportService.deleteReport(id);
         return ResponseEntity.noContent().build();

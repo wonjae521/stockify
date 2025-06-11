@@ -1,5 +1,7 @@
 package com.stock.stockify.global.security;
 
+import com.stock.stockify.domain.user.User;
+import com.stock.stockify.domain.user.UserRepository;
 import com.stock.stockify.global.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     // 실제 필터링 작업을 수행하는 메소드, 요청마다 실행
     @Override
@@ -61,9 +65,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
                 authorities.add(authority); // ROLE_ADMIN 또는 ROLE_STAFF도 포함
 
+                User user = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new UsernameNotFoundException("사용자 없음"));
+
                 // Spring Security에서 사용 가능한 인증 객체 생성
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, Collections.singletonList(authority));
+                        new UsernamePasswordAuthenticationToken(user, null, Collections.singletonList(authority));
 
                 // 추가 요청 정보 설정 (IP 주소, 세션 ID 등)
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -28,7 +28,7 @@ public class UserController {
     public ResponseEntity<String> register(@RequestBody @Valid UserRegisterRequest request) {
         userService.registerUser(request.getUsername(), // 아이디
                                  request.getPassword(), // 비밀번호
-                                 request.getRole(),     // 일반 회원가입은 추후 관리자 고정
+                                 request.getRoleId(),   // 일반 회원가입은 추후 관리자 고정
                                  request.getEmail());   // 이메일
         return ResponseEntity.ok("회원가입 완료");
     }

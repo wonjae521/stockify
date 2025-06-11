@@ -1,5 +1,6 @@
 package com.stock.stockify.domain.user;
 
+import com.stock.stockify.domain.permission.Role;
 import com.stock.stockify.domain.warehouse.UserWarehouseRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,9 +30,16 @@ public class User {
     @Column(nullable = false)
     private String password; // 비밀번호
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
+
+
+    /**
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoleType roleType; // 사용자 역할 (ADMIN, SUBADMIN, STAFF)
+     */
 
     /**
     @ManyToOne(fetch = FetchType.LAZY)

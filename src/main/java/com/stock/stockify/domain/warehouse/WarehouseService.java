@@ -4,10 +4,12 @@ import com.stock.stockify.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Transactional
 @Service
 @RequiredArgsConstructor
 public class WarehouseService {
@@ -23,20 +25,21 @@ public class WarehouseService {
                 throw new AccessDeniedException("이메일 인증 전에는 하나의 창고만 생성할 수 있습니다.");
             }
         }
+        // 창고 이름 중복 방지용
+        String uniqueName = generateUniqueWarehouseName(request.getName(), user);
 
         Warehouse warehouse = Warehouse.builder()
-                .name(request.getName())
+                .name(uniqueName)
                 .description(request.getDescription())
                 .build();
-
-        warehouseRepository.save(warehouse);
 
         UserWarehouseRole link = UserWarehouseRole.builder()
                 .user(user)
                 .warehouse(warehouse)
-                .roleType(user.getRoleType())
+                .role(user.getRole())
                 .build();
 
+        warehouseRepository.save(warehouse);
         userWarehouseRoleRepository.save(link);
 
         return warehouse;
@@ -74,7 +77,24 @@ public class WarehouseService {
         if (!hasAccess) {
             throw new AccessDeniedException("이 창고에 대해 삭제 권한이 없습니다.");
         }
-
+        userWarehouseRoleRepository.deleteByWarehouse(warehouse);
         warehouseRepository.delete(warehouse);
+    }
+
+    private String generateUniqueWarehouseName(String baseName, User user) {
+        List<String> existingNames = userWarehouseRoleRepository.findByUser(user).stream()
+                .map(uwr -> uwr.getWarehouse().getName())
+                .collect(Collectors.toList());
+
+        if (!existingNames.contains(baseName)) {
+            return baseName;
+        }
+
+        int suffix = 1;
+        while (existingNames.contains(baseName + "(" + suffix + ")")) {
+            suffix++;
+        }
+
+        return baseName + "(" + suffix + ")";
     }
 }

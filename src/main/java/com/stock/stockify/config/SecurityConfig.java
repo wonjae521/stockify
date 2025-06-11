@@ -58,6 +58,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/change-password-success").permitAll()
                         .requestMatchers(HttpMethod.GET, "/change-password-success").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/email/verify-password-token").permitAll()
+                        .requestMatchers("/api/warehouses/**").authenticated()
+
 
 
                         // WebSocket 관련 예외 추가 (테스트용 HTML, 연결 엔드포인트, 메시지 송수신 경로 허용)

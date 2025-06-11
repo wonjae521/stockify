@@ -21,7 +21,7 @@ public class UserRegisterRequest {
     private String password;
 
     @NotNull(message = "역할(role)은 필수입니다.")
-    private RoleType role; // ADMIN, SUBADMIN, STAFF
+    private Long roleId; // ADMIN, SUBADMIN, STAFF
 
     @NotBlank(message = "email을 입력해주세요.")
     private String email; // 이메일
