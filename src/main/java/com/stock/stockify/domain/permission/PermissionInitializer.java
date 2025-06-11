@@ -22,7 +22,7 @@ public class PermissionInitializer implements CommandLineRunner {
                 "INVENTORY_READ", "INVENTORY_WRITE", "INVENTORY_DELETE",
                 "ORDER_MANAGE", "REPORT_MANAGE", "REPORT_VIEW",
                 "TAG_MANAGE", "NOTIFICATION_MANAGE", "NOTIFICATION_VIEW",
-                "USER_MANAGE", "STORAGE_RETRIEVAL_MANAGE"
+                "USER_MANAGE", "STORAGE_RETRIEVAL_MANAGE", "WAREHOUSE_MANAGE", "WAREHOUSE_VIEW"
         );
 
         // 모든 권한을 한 번에 가져와 Map으로 변환 (이름 → Permission)

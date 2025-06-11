@@ -9,6 +9,8 @@ import com.stock.stockify.global.exception.ForbiddenException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class PermissionChecker {
@@ -23,11 +25,26 @@ public class PermissionChecker {
      * @param permission 검사할 권한 객체
      */
     public void checkAccessToWarehouse(User user, Long warehouseId, Permission permission) {
+
         // 사용자가 이 창고에서 어떤 역할을 가지고 있는지 확인
         UserWarehouseRole userWarehouseRole = userWarehouseRoleRepository
                 .findByUserAndWarehouseId(user.getId(), warehouseId)
                 .orElseThrow(() -> new ForbiddenException("해당 창고에 접근 권한이 없습니다."));
 
+        List<UserWarehouseRole> roles = user.getUserWarehouseRoles();
+        // 그 역할이 해당 권한을 포함하는지 확인
+        boolean hasPermission = roles.stream()
+                .anyMatch(uwr -> {
+                    if (warehouseId != null && !uwr.getWarehouse().getId().equals(warehouseId)) return false;
+                    return rolePermissionRepository.existsByRoleAndPermission(uwr.getRole(), permission);
+                });
+
+        // 없으면 예외 발생
+        if (!hasPermission) {
+            throw new ForbiddenException("해당 작업을 수행할 권한이 없습니다.");
+        }
+
+            /**
         // 그 역할이 해당 권한을 포함하는지 확인
         boolean hasPermission = rolePermissionRepository
                 .existsByRoleAndPermission(userWarehouseRole.getRole(), permission);
@@ -36,6 +53,7 @@ public class PermissionChecker {
         if (!hasPermission) {
             throw new ForbiddenException("해당 작업을 수행할 권한이 없습니다.");
         }
+         */
     }
 }
 

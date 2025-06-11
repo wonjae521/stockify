@@ -1,0 +1,85 @@
+package com.stock.stockify.domain.permission;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Component
+@RequiredArgsConstructor
+public class RolePermissionInitializer implements CommandLineRunner {
+
+    private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
+    private final RolePermissionRepository rolePermissionRepository;
+
+    @Override
+    public void run(String... args) {
+        // 전체 권한 이름 리스트
+        List<String> allPermissions = List.of(
+                "INVENTORY_READ", "INVENTORY_WRITE", "INVENTORY_DELETE",
+                "ORDER_MANAGE", "REPORT_MANAGE", "REPORT_VIEW",
+                "TAG_MANAGE", "NOTIFICATION_MANAGE", "NOTIFICATION_VIEW",
+                "USER_MANAGE", "STORAGE_RETRIEVAL_MANAGE", "WAREHOUSE_MANAGE", "WAREHOUSE_VIEW"
+        );
+
+        // SUBADMIN 권한 (ADMIN 제외 권한)
+        List<String> subAdminPermissions = allPermissions.stream()
+                .filter(p -> !List.of("USER_MANAGE", "WAREHOUSE_MANAGE").contains(p))
+                .toList();
+
+        // STAFF 권한
+        List<String> staffPermissions = List.of("INVENTORY_READ", "REPORT_VIEW", "NOTIFICATION_VIEW");
+
+        // 권한, 역할, 기존 연결된 RolePermission 한 번에 조회
+        List<Role> roles = roleRepository.findAll();
+
+        // Lazy 방지용 fetch join으로 RolePermission 로딩
+        List<RolePermission> rolePermissions = rolePermissionRepository.findAllWithRoleAndPermission();
+
+        Map<String, Permission> permissionMap = permissionRepository.findAll().stream()
+                .collect(Collectors.toMap(Permission::getName, Function.identity()));
+
+        Set<String> existingLinks = rolePermissions.stream() 
+                .map(rp -> rp.getRole().getName() + "_" + rp.getPermission().getName())
+                .collect(Collectors.toSet());
+
+        for (Role role : roles) {
+            List<String> rolePermissionsToAssign;
+
+            switch (role.getName()) {
+                case "ADMIN":
+                    rolePermissionsToAssign = allPermissions;
+                    break;
+                case "SUBADMIN":
+                    rolePermissionsToAssign = subAdminPermissions;
+                    break;
+                case "STAFF":
+                    rolePermissionsToAssign = staffPermissions;
+                    break;
+                default:
+                    continue; // for문 바깥으로 돌아가기
+            }
+
+
+            for (String permissionName : rolePermissionsToAssign) {
+                String key = role.getName() + "_" + permissionName;
+
+                if (existingLinks.contains(key)) continue;
+
+                rolePermissionRepository.save(
+                        RolePermission.builder()
+                                .role(role)
+                                .permission(permissionMap.get(permissionName))
+                                .build()
+                );
+            }
+            System.out.println("RolePermission 초기화 완료");
+        }
+    }
+}
