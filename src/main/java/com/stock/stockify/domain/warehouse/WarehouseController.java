@@ -16,6 +16,7 @@ public class WarehouseController {
 
     private final WarehouseService warehouseService;
 
+    // 창고 생성
     @PostMapping
     public ResponseEntity<WarehouseResponse> createWarehouse(@RequestBody CreateWarehouseRequest request,
                                                              @AuthenticationPrincipal User user) {
@@ -23,6 +24,7 @@ public class WarehouseController {
         return ResponseEntity.ok(WarehouseResponse.from(created));
     }
 
+    // 창고 조회
     @GetMapping
     public ResponseEntity<List<WarehouseResponse>> getWarehouses(@AuthenticationPrincipal User user) {
         List<WarehouseResponse> warehouses = warehouseService.getWarehouses(user).stream()
@@ -31,6 +33,7 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouses);
     }
 
+    // 창고 수정
     @PutMapping("/{warehouseId}")
     public ResponseEntity<WarehouseResponse> updateWarehouse(@PathVariable Long warehouseId,
                                                              @RequestBody CreateWarehouseRequest request,
@@ -39,6 +42,7 @@ public class WarehouseController {
         return ResponseEntity.ok(WarehouseResponse.from(updated));
     }
 
+    // 창고 삭제
     @DeleteMapping("/{warehouseId}")
     public ResponseEntity<Void> deleteWarehouse(@PathVariable Long warehouseId,
                                                 @AuthenticationPrincipal User user) {

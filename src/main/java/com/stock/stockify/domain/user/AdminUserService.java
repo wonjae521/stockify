@@ -1,6 +1,7 @@
-package com.stock.stockify.domain.permission;
+package com.stock.stockify.domain.user;
 
-import com.stock.stockify.domain.user.*;
+import com.stock.stockify.domain.permission.Role;
+import com.stock.stockify.domain.permission.RoleRepository;
 import com.stock.stockify.domain.warehouse.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ public class AdminUserService {
     private final UserRepository userRepository;
     private final WarehouseRepository warehouseRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
     // 창고 생성
     @Transactional
@@ -32,17 +34,20 @@ public class AdminUserService {
 
     // 사용자 등록 + 창고 권한 연결
     @Transactional
-    public UserResponseDto registerUserWithWarehouse(String username, String password, String email, RoleType role, List<Long> warehouseIds) {
+    public UserResponseDto registerUserWithWarehouse(String username, String password, String email, Long roleId, List<Long> warehouseIds) {
 
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("이미 존재하는 사용자입니다.");
         }
 
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("역할이 존재하지 않습니다."));
+
         User user = userRepository.save(User.builder()
                 .username(username)
                 .password(passwordEncoder.encode(password))
                 .email(email)
-                .roleType(role)
+                .role(role)
                 .userWarehouseRoles(new ArrayList<>())
                 //.warehouse(warehouse)
                 .build());
@@ -55,7 +60,7 @@ public class AdminUserService {
             roles.add(UserWarehouseRole.builder()
                     .user(user)
                     .warehouse(warehouse)
-                    .roleType(role)
+                    .role(role)
                     .build());
         }
 
@@ -64,6 +69,12 @@ public class AdminUserService {
                 .map(r -> r.getWarehouse().getId())
                 .toList();
 
-        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), user.getRoleType(), warehouseIdsResult);
+        List<String> roless = user.getUserWarehouseRoles().stream()
+                .map(uwr -> uwr.getRole().getName())
+                .distinct() // 같은 역할 중복 제거 (선택)
+                .toList();
+
+
+        return new UserResponseDto(user.getId(), user.getUsername(), user.getEmail(), roless, warehouseIdsResult);
     }
 }

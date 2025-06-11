@@ -12,6 +12,6 @@ public class UserResponseDto {
     private Long id;
     private String username;
     private String email;
-    private RoleType role;
+    private List<String> roles;
     private List<Long> warehouseIds;
 }

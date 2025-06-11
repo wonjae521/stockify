@@ -1,6 +1,6 @@
 package com.stock.stockify.domain.warehouse;
 
-import com.stock.stockify.domain.user.RoleType;
+import com.stock.stockify.domain.permission.Role;
 import com.stock.stockify.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,6 +23,13 @@ public class UserWarehouseRole {
     @ManyToOne(fetch = FetchType.LAZY)
     private Warehouse warehouse;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
+
+
+    /**
     @Enumerated(EnumType.STRING)
     private RoleType roleType; // 예: ADMIN, SUBADMIN, STAFF
+    */
 }

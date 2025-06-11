@@ -25,4 +25,11 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(errorMessage);
     }
+    // 403 에러 메시지 반환
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<String> handleForbidden(ForbiddenException e) {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN) // 403 코드
+                .body(e.getMessage()); // 예외 메시지 반환
+    }
 }

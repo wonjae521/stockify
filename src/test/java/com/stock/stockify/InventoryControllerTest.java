@@ -1,6 +1,5 @@
 package com.stock.stockify;
 
-import com.stock.stockify.domain.user.RoleType;
 import com.stock.stockify.domain.user.User;
 import com.stock.stockify.domain.user.UserRepository;
 import com.stock.stockify.domain.warehouse.Warehouse;
@@ -15,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

@@ -1,8 +1,5 @@
-package com.stock.stockify.domain.permission;
+package com.stock.stockify.domain.user;
 
-import com.stock.stockify.domain.user.User;
-import com.stock.stockify.domain.user.UserRegisterRequest;
-import com.stock.stockify.domain.user.UserResponseDto;
 import com.stock.stockify.domain.warehouse.Warehouse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +31,7 @@ public class AdminUserController {
                 request.getUsername(),
                 request.getPassword(),
                 request.getEmail(),
-                request.getRole(),
+                request.getRoleId(),
                 request.getWarehouseIds()
         );
         return ResponseEntity.ok(createdUser);
