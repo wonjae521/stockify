@@ -1,7 +1,10 @@
 package com.stock.stockify.domain.user;
 
-import com.stock.stockify.domain.permission.Role;
-import com.stock.stockify.domain.permission.RoleRepository;
+import com.stock.stockify.domain.permission.*;
+import com.stock.stockify.domain.warehouse.UserWarehouseRole;
+import com.stock.stockify.domain.warehouse.UserWarehouseRoleRepository;
+import com.stock.stockify.domain.warehouse.Warehouse;
+import com.stock.stockify.domain.warehouse.WarehouseRepository;
 import com.stock.stockify.global.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 // 사용자(User) 관련 비즈니스 로직 처리 서비스
 @Service
@@ -23,30 +27,131 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final EmailVerificationService emailVerificationService;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final WarehouseRepository warehouseRepository;
+    private final UserRoleRepository userRoleRepository;
+    private final RolePermissionRepository rolePermissionRepository;
+    private final PermissionRepository permissionRepository;
     private final RoleRepository roleRepository;
+    private final UserWarehouseRoleRepository userWarehouseRoleRepository;
 
     // 회원가입
-    public void registerUser(String username, String password, Long roleId, String email) {
+    public void registerUser(String username, String password, String email) {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("이미 존재하는 사용자입니다.");
         }
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new IllegalArgumentException("역할이 존재하지 않습니다."));
+        /**
+        // 2. roleId를 통해 roleName 문자열 가져오기 (예: STAFF)
+        String roleName = resolveRoleName(roleId); // ❗️새 메서드로 대체
+        if (roleName == null) {
+            throw new IllegalArgumentException("유효하지 않은 역할입니다.");
+        }*/
 
+        // 오직 ADMIN만 허용
+        String roleName = "ADMIN";
+
+        // 사용자 생성
         User user = User.builder()
                 .username(username)
                 .password(passwordEncoder.encode(password))
-                .role(role)
                 .email(email)
+                .emailVerified(false)
+                // .createdAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(user);
+
+        // 이메일 인증 토큰 발급
         emailVerificationService.generateToken(
                 user.getId(),
-                "127.0.0.1",  // 테스트용 IP 주소 (실제 서비스에서는 request.getRemoteAddr() 등으로 대체)
-                "EMAIL_VERIFICATION",
-                15  // 유효 시간 (분)
+                "127.0.0.1",        // 테스트용 IP 주소 (실제 서비스에서는 request.getRemoteAddr() 등으로 대체)
+                "EMAIL_VERIFICATION",        // 유효 시간 (분)
+                15
         );
+
+        // ADMIN 역할 생성
+        Role adminRole = roleRepository.save(Role.builder()
+                .name("ADMIN")
+                .admin(user)
+                .build());
+
+        // ADMIN 역할에 전체 권한 부여
+        List<Permission> allPermissions = permissionRepository.findAll();
+        for (Permission permission : allPermissions) {
+            RolePermission rolePermission = RolePermission.builder()
+                    .role(adminRole)
+                    .permission(permission)
+                    .build();
+            rolePermissionRepository.save(rolePermission);
+        }
+
+        // ADMIN 전용 창고 생성
+        Warehouse personalWarehouse = warehouseRepository.save(
+                Warehouse.builder()
+                        .name(username + "_기본창고")
+                        .description("ADMIN " + username + " 전용 기본 창고")
+                        .admin(user)
+                        .build());
+
+        // 해당 창고에 ADMIN 역할 할당
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .warehouse(personalWarehouse)
+                .role(adminRole)
+                .build();
+        userRoleRepository.save(userRole);
+
+        UserWarehouseRole userWarehouseRole = UserWarehouseRole.builder()
+                .user(user)
+                .warehouse(personalWarehouse)  // 개인 창고
+                .role(adminRole)               // ADMIN 역할
+                .build();
+
+        userWarehouseRoleRepository.save(userWarehouseRole);
+
+
+        /**
+         * 기본 권한 부여 (예: STAFF에게 INVENTORY_VIEW, ORDER_VIEW 등)
+         * 지금은 창고 ID 1번 기준. 추후 프론트에서 전달받을 수 있음
+         */
+        /**
+        // 기본 창고 할당
+        Warehouse defaultWarehouse = warehouseRepository.findById(1L)
+                .orElseThrow(() -> new RuntimeException("기본 창고 없음"));
+
+        Role role = roleRepository.save(
+                Role.builder()
+                        .name("ADMIN")
+                        .admin(user)
+                        .build()
+        );
+
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .warehouse(defaultWarehouse)
+                .role(role)
+                .build();
+
+        userRoleRepository.save(userRole);
+
+        // ADMIN -> 전체권한 부여
+        List<Permission> permissions = getPermissionsForRole(roleName);
+        for (Permission permission : permissions) {
+            RolePermission rolePermission = RolePermission.builder()
+                    .role(userRole.getRole())
+                    .permission(permission)
+                    .build();
+            rolePermissionRepository.save(rolePermission);
+        } */
+    }
+
+    // 역할명에 따른 권한 목록 반환
+    private List<Permission> getPermissionsForRole(String roleName) {
+        List<String> permissionCodes = RolePermissionPreset.getPermissionCodesForRole(roleName);
+        if (permissionCodes == null) {
+            return permissionRepository.findAll(); // ADMIN 등 전체 권한 부여
+        }
+        return permissionRepository.findByNameIn(permissionCodes);
+    }
 
        /** // 기본 권한 부여 (예: STAFF에게 INVENTORY_VIEW, ORDER_VIEW 등)
         List<String> defaultPermissions = switch (role) {
@@ -58,8 +163,8 @@ public class UserService {
         List<Permission> permissionEntities = permissionRepository.findByNameIn(defaultPermissions);
         for (Permission p : permissionEntities) {
             userPermissionRepository.save(new UserPermission(user, p));
-        }*/
-    }
+        }
+    }*/
 
     // 로그인
     public LoginResponse login(String username, String password) {
@@ -70,9 +175,15 @@ public class UserService {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
 
-        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().getName());
+        UserRole representativeRole = userRoleRepository.findByUserId(user.getId())
+                .stream().findFirst()
+                .orElseThrow(() -> new RuntimeException("역할이 지정되지 않은 사용자입니다."));
 
-        return new LoginResponse(token, user.getUsername(), user.getRole().getName(), user.isEmailVerified());
+        String roleName = representativeRole.getRole().getName();
+
+        String token = jwtUtil.generateToken(user.getUsername(), roleName);
+
+        return new LoginResponse(token, user.getUsername(), roleName, user.isEmailVerified());
     }
 
     // 사용자 정보 찾기(사용자ID)
@@ -146,5 +257,19 @@ public class UserService {
 
         userRepository.save(user);
     }
+
+    public List<UserSummaryResponseDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> new UserSummaryResponseDto(user.getId(), user.getUsername(), user.getEmail()))
+                .toList();
+    }
+
+    // 사용자 회원가입시킨 ADMIN으로 조회
+    public List<UserSummaryResponseDto> getAllUsersByAdmin(User admin) {
+        return userRepository.findByAdmin(admin).stream()
+                .map(user -> new UserSummaryResponseDto(user.getId(), user.getUsername(), user.getEmail()))
+                .toList();
+    }
+
 
 }

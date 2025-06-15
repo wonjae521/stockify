@@ -29,6 +29,8 @@ public class AdminUserRegisterRequest {
     @NotBlank(message = "email을 입력해주세요.")
     private String email; // 이메일
 
+    private User admin;
+
     @NotEmpty
     private List<Long> warehouseIds; // 창고 ID, 창고 위치 수정하는 로직 추가
 }

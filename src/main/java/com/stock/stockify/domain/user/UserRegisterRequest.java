@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 // 회원가입 요청 데이터를 받는 DTO
 // 아이디, 비밀번호, 역할(role)을 입력받는다
 @Setter
@@ -21,10 +23,16 @@ public class UserRegisterRequest {
     private String password;
 
     @NotNull(message = "역할(role)은 필수입니다.")
-    private Long roleId; // ADMIN, SUBADMIN, STAFF
+    private Long role; // ADMIN, SUBADMIN, STAFF
 
     @NotBlank(message = "email을 입력해주세요.")
     private String email; // 이메일
 
+    private List<WarehouseAssignment> warehouses;
+
+    @Getter @Setter
+    public static class WarehouseAssignment {
+        private Long warehouseId;
+    }
 }
 

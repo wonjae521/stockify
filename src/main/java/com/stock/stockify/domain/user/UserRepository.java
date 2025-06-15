@@ -1,6 +1,8 @@
 package com.stock.stockify.domain.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
 import java.util.Optional;
 
 // User 엔티티에 대한 JPA 레포지토리
@@ -9,5 +11,6 @@ public interface UserRepository extends JpaRepository<User, Long> { // User 엔�
 
     Optional<User> findByUsername(String username); // 아이디(username)로 회원을 조회하는 기능 (로그인에 사용 예정)
     boolean existsByUsername(String username); // 아이디 중복 여부 확인
+    List<User> findByAdmin(User admin); // admin기준 사용자 조회
 
 }

@@ -1,5 +1,6 @@
 package com.stock.stockify.domain.user;
 
+import com.stock.stockify.domain.permission.*;
 import com.stock.stockify.global.mail.EmailService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,6 +13,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 // 사용자(User) 관련 API를 처리하는 컨트롤러
 // 회원가입, 로그인 기능 제공
 @RestController
@@ -22,13 +25,13 @@ public class UserController {
     private final UserService userService;
     private final EmailVerificationService emailVerificationService;
     private final EmailService emailService;
+    private final UserRoleService userRoleService;
 
     // 회원가입
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody @Valid UserRegisterRequest request) {
         userService.registerUser(request.getUsername(), // 아이디
                                  request.getPassword(), // 비밀번호
-                                 request.getRoleId(),   // 일반 회원가입은 추후 관리자 고정
                                  request.getEmail());   // 이메일
         return ResponseEntity.ok("회원가입 완료");
     }
@@ -114,5 +117,34 @@ public class UserController {
     public ResponseEntity<String> changePassword(@RequestBody PasswordChangeRequest request) {
         emailVerificationService.changePasswordWithToken(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+    }
+
+    // 사용자 역할 + 권한 조회
+    @GetMapping("/{userId}/roles")
+    public ResponseEntity<List<UserRoleResponseDto>> getUserRoles(@PathVariable Long userId) {
+        List<UserRoleResponseDto> roles = userRoleService.getUserRolesWithPermissions(userId);
+        return ResponseEntity.ok(roles);
+    }
+
+    // 사용자 역할 수정
+    @PutMapping("/user-roles")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateUserRole(@RequestBody UserRoleUpdateRequest request) {
+        userRoleService.updateUserRole(request);
+        return ResponseEntity.ok("사용자 역할이 변경되었습니다.");
+    }
+
+    // 사용자 역할 삭제
+    @DeleteMapping("/user-roles")
+    public ResponseEntity<?> deleteUserRole(@RequestBody UserRoleDeleteRequest request) {
+        userRoleService.deleteUserRole(request);
+        return ResponseEntity.ok("사용자 역할이 삭제되었습니다.");
+    }
+
+    // 전체 사용자 목록 조회
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserSummaryResponseDto>> getAllUsers(@AuthenticationPrincipal User currentAdmin) {
+        return ResponseEntity.ok(userService.getAllUsersByAdmin(currentAdmin));
     }
 }

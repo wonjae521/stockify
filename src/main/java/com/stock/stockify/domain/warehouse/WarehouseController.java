@@ -2,6 +2,8 @@ package com.stock.stockify.domain.warehouse;
 
 import com.stock.stockify.domain.permission.Permission;
 import com.stock.stockify.domain.permission.PermissionRepository;
+import com.stock.stockify.domain.permission.Role;
+import com.stock.stockify.domain.permission.RoleRepository;
 import com.stock.stockify.domain.user.User;
 import com.stock.stockify.global.auth.PermissionChecker;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
     private final PermissionRepository permissionRepository;
     private final PermissionChecker permissionChecker;
+    private final RoleRepository roleRepository;
 
     // 창고 생성
     @PostMapping
@@ -29,9 +32,18 @@ public class WarehouseController {
         Permission permission = permissionRepository.findByName("WAREHOUSE_MANAGE")
                 .orElseThrow(() -> new RuntimeException("권한이 존재하지 않습니다."));
 
-        permissionChecker.checkAccessToWarehouse(user, null, permission);
+        permissionChecker.check(user.getId(), "WAREHOUSE_MANAGE");
 
-        Warehouse created = warehouseService.createWarehouse(request, user);
+
+        Role role = roleRepository.findByNameAndAdminId("ADMIN", user.getId())
+                .orElseGet(() -> roleRepository.save(Role.builder()
+                        .name("ADMIN")
+                        .admin(user)
+                        .build())
+                );
+
+        Warehouse created = warehouseService.createWarehouse(request, user, role);
+
         return ResponseEntity.ok(WarehouseResponse.from(created));
     }
 
@@ -42,7 +54,7 @@ public class WarehouseController {
         Permission permission = permissionRepository.findByName("WAREHOUSE_VIEW")
                 .orElseThrow(() -> new RuntimeException("권한이 존재하지 않습니다."));
 
-        permissionChecker.checkAccessToWarehouse(user, null, permission);
+        permissionChecker.check(user.getId(), "WAREHOUSE_VIEW");
 
         List<WarehouseResponse> warehouses = warehouseService.getWarehouses(user).stream()
                 .map(WarehouseResponse::from)
@@ -59,7 +71,8 @@ public class WarehouseController {
         Permission permission = permissionRepository.findByName("WAREHOUSE_MANAGE")
                 .orElseThrow(() -> new RuntimeException("권한이 존재하지 않습니다."));
 
-        permissionChecker.checkAccessToWarehouse(user, null, permission);
+        permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "WAREHOUSE_MANAGE");
+
 
         Warehouse updated = warehouseService.updateWarehouse(warehouseId, request, user);
         return ResponseEntity.ok(WarehouseResponse.from(updated));
@@ -73,7 +86,8 @@ public class WarehouseController {
         Permission permission = permissionRepository.findByName("WAREHOUSE_MANAGE")
                 .orElseThrow(() -> new RuntimeException("권한이 존재하지 않습니다."));
 
-        permissionChecker.checkAccessToWarehouse(user, null, permission);
+        permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "WAREHOUSE_MANAGE");
+
 
         warehouseService.deleteWarehouse(warehouseId, user);
         return ResponseEntity.noContent().build();

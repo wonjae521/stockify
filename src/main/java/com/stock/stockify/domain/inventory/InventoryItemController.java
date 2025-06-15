@@ -33,9 +33,8 @@ public class InventoryItemController {
 
         User user = userService.getUserFromUserDetails(userDetails);
         // 권한 확인
-        Permission permission = permissionRepository.findByName("INVENTORY_WRITE")
-                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission);
+        permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "INVENTORY_WRITE");
+
 
         // 재고 등록
         inventoryItemService.createInventoryItem(warehouseId, request);
@@ -49,9 +48,8 @@ public class InventoryItemController {
 
         User user = userService.getUserFromUserDetails(userDetails);
         // 권한 확인
-        Permission permission = permissionRepository.findByName("INVENTORY_READ")
-                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission); // 단순 접근 권한만 확인 (읽기니까 권한 플래그 체크는 안함)
+        permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "INVENTORY_VIEW");
+        // 단순 접근 권한만 확인 (읽기니까 권한 플래그 체크는 안함)
 
         return ResponseEntity.ok(inventoryItemService.getItemsByWarehouse(warehouseId));
     }
@@ -65,9 +63,7 @@ public class InventoryItemController {
 
         User user = userService.getUserFromUserDetails(userDetails);
         // 수정 권한 확인
-        Permission permission = permissionRepository.findByName("INVENTORY_WRITE")
-                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission);
+        permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "INVENTORY_WRITE");
 
         inventoryItemService.updateItem(warehouseId, itemId, request);
         return ResponseEntity.ok("재고 수정 완료");
@@ -81,9 +77,8 @@ public class InventoryItemController {
 
         User user = userService.getUserFromUserDetails(userDetails);
         // 삭제 권한 확인
-        Permission permission = permissionRepository.findByName("INVENTORY_DELETE")
-                .orElseThrow(() -> new RuntimeException("해당 권한이 존재하지 않습니다."));
-        permissionChecker.checkAccessToWarehouse(user, warehouseId, permission);
+        permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "INVENTORY_DELETE");
+
 
         inventoryItemService.deleteItem(warehouseId, itemId);
         return ResponseEntity.ok("재고 삭제 완료");

@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/inventories/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()
                         .requestMatchers("/api/reports/**").authenticated()
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
 
                         .requestMatchers(HttpMethod.POST, "/api/users/request-password-reset").permitAll() // 비밀번호 변경 , 메일 인증용 토큰 요청
                         .requestMatchers(HttpMethod.PATCH, "/api/users/reset-password").permitAll() // 비밀번호 재설정 JWT 없이 가능
@@ -86,6 +87,7 @@ public class SecurityConfig {
                 // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
                 // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
                 .httpBasic(basic -> basic.disable()); // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음);
+
 
 
         return http.build();
