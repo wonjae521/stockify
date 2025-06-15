@@ -17,6 +17,8 @@ public class Permission {
 
     @Column(nullable = false, unique = true)
     private String name; // 예: "INVENTORY_READ"
+
+    private String description;
 }
 
 

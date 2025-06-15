@@ -8,6 +8,9 @@ import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * 사용자(User)가 특정 창고(Warehouse)에 대해 어떤 역할(직무)을 수행하는지 나타내는 엔티티
+ */
 @Entity
 @Getter
 @Setter
@@ -21,12 +24,15 @@ public class UserRole {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 역할을 가지는 사용자
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
+    // 역할이 적용되는 창고
     @ManyToOne(fetch = FetchType.LAZY)
     private Warehouse warehouse;
 
-    @OneToMany(mappedBy = "userRole", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<RolePermission> rolePermissions = new HashSet<>();
+    // 역할 이름: "ADMIN", "SUBADMIN", "STAFF"
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Role role;
 }

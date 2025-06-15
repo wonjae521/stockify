@@ -1,5 +1,6 @@
 package com.stock.stockify.domain.warehouse;
 
+import com.stock.stockify.domain.permission.Role;
 import com.stock.stockify.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -18,7 +19,7 @@ public class WarehouseService {
     private final UserWarehouseRoleRepository userWarehouseRoleRepository;
 
     // 창고 생성
-    public Warehouse createWarehouse(CreateWarehouseRequest request, User user) {
+    public Warehouse createWarehouse(CreateWarehouseRequest request, User user, Role role)    {
         if (!user.isEmailVerified()) {
             long count = userWarehouseRoleRepository.countByUser(user);
             if (count >= 1) {
@@ -31,12 +32,13 @@ public class WarehouseService {
         Warehouse warehouse = Warehouse.builder()
                 .name(uniqueName)
                 .description(request.getDescription())
+                .admin(user)
                 .build();
 
         UserWarehouseRole link = UserWarehouseRole.builder()
                 .user(user)
                 .warehouse(warehouse)
-                .role(user.getRole())
+                .role(role)
                 .build();
 
         warehouseRepository.save(warehouse);

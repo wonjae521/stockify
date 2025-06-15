@@ -1,6 +1,7 @@
 package com.stock.stockify.domain.warehouse;
 
 import com.stock.stockify.domain.permission.Role;
+import com.stock.stockify.domain.permission.UserRole;
 import com.stock.stockify.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,7 +25,7 @@ public class UserWarehouseRole {
     private Warehouse warehouse;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = false)
+    @JoinColumn(name = "role_name", nullable = false)
     private Role role;
 
 

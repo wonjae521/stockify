@@ -1,122 +1,66 @@
 package com.stock.stockify.global.auth;
 
 import com.stock.stockify.domain.permission.Permission;
+import com.stock.stockify.domain.permission.PermissionRepository;
 import com.stock.stockify.domain.permission.RolePermissionRepository;
-import com.stock.stockify.domain.user.User;
-import com.stock.stockify.domain.warehouse.UserWarehouseRole;
-import com.stock.stockify.domain.warehouse.UserWarehouseRoleRepository;
-import com.stock.stockify.global.exception.ForbiddenException;
+import com.stock.stockify.domain.permission.UserRole;
+import com.stock.stockify.domain.permission.UserRoleRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * 사용자 권한을 검사하는 유틸리티 클래스
+ * - 전역 권한 검사 또는 창고별 접근 권한 검사 지원
+ */
 @Component
 @RequiredArgsConstructor
 public class PermissionChecker {
 
-    private final UserWarehouseRoleRepository userWarehouseRoleRepository;
+    private final UserRoleRepository userRoleRepository;
     private final RolePermissionRepository rolePermissionRepository;
+    private final PermissionRepository permissionRepository;
 
     /**
-     * 사용자가 해당 창고에서 주어진 권한을 가지고 있는지 검사한다.
-     * @param user 현재 로그인한 사용자
-     * @param warehouseId 검사 대상 창고 ID
-     * @param permission 검사할 권한 객체
+     * ✅ 창고와 무관하게 사용자가 전체 권한 중 하나라도 갖고 있는지 검사
      */
-    public void checkAccessToWarehouse(User user, Long warehouseId, Permission permission) {
+    @Transactional
+    public void check(Long userId, String permissionCode) {
+        Permission permission = permissionRepository.findByName(permissionCode)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 권한 코드: " + permissionCode));
 
-        // 사용자가 이 창고에서 어떤 역할을 가지고 있는지 확인
-        UserWarehouseRole userWarehouseRole = userWarehouseRoleRepository
-                .findByUserAndWarehouseId(user.getId(), warehouseId)
-                .orElseThrow(() -> new ForbiddenException("해당 창고에 접근 권한이 없습니다."));
+        List<UserRole> userRoles = userRoleRepository.findByUserId(userId);
 
-        List<UserWarehouseRole> roles = user.getUserWarehouseRoles();
-        // 그 역할이 해당 권한을 포함하는지 확인
-        boolean hasPermission = roles.stream()
-                .anyMatch(uwr -> {
-                    if (warehouseId != null && !uwr.getWarehouse().getId().equals(warehouseId)) return false;
-                    return rolePermissionRepository.existsByRoleAndPermission(uwr.getRole(), permission);
-                });
+        boolean hasPermission = userRoles.stream()
+                .anyMatch(userRole ->
+                        rolePermissionRepository.existsByRoleAndPermission(userRole.getRole(), permission)
+                );
 
-        // 없으면 예외 발생
         if (!hasPermission) {
-            throw new ForbiddenException("해당 작업을 수행할 권한이 없습니다.");
+            throw new AccessDeniedException("권한이 없습니다: " + permissionCode);
         }
-
-            /**
-        // 그 역할이 해당 권한을 포함하는지 확인
-        boolean hasPermission = rolePermissionRepository
-                .existsByRoleAndPermission(userWarehouseRole.getRole(), permission);
-
-        // 없으면 예외 발생
-        if (!hasPermission) {
-            throw new ForbiddenException("해당 작업을 수행할 권한이 없습니다.");
-        }
-         */
     }
-}
 
+    /**
+     * ✅ 특정 창고에 대해 사용자가 해당 권한을 갖고 있는지 검사
+     */
+    @Transactional
+    public void checkAccessToWarehouse(Long userId, Long warehouseId, String permissionCode) {
+        Permission permission = permissionRepository.findByName(permissionCode)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 권한 코드: " + permissionCode));
 
+        List<UserRole> userRoles = userRoleRepository.findByUserIdAndWarehouseId(userId, warehouseId);
 
+        boolean hasPermission = userRoles.stream()
+                .anyMatch(userRole ->
+                        rolePermissionRepository.existsByRoleAndPermission(userRole.getRole(), permission)
+                );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
-import com.stock.stockify.domain.permission.Permission;
-import com.stock.stockify.domain.role.RolePermissionRepository;
-import com.stock.stockify.domain.user.User;
-import com.stock.stockify.domain.user.UserWarehouseRole;
-import com.stock.stockify.domain.user.UserWarehouseRoleRepository;
-import com.stock.stockify.domain.warehouse.Warehouse;
-import com.stock.stockify.global.exception.ForbiddenException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
-@Component
-@RequiredArgsConstructor
-public class PermissionChecker {
-
-    private final UserWarehouseRoleRepository userWarehouseRoleRepository;
-    private final RolePermissionRepository rolePermissionRepository;
-
-
-     * 사용자가 해당 창고에서 주어진 권한을 가지고 있는지 검사한다.
-     * @param user 현재 로그인한 사용자
-     * @param warehouseId 검사 대상 창고 ID
-     * @param permission 검사할 권한 객체
-
-    public void checkAccessToWarehouse(User user, Long warehouseId, Permission permission) {
-        // 1. 사용자가 이 창고에서 어떤 역할을 가지고 있는지 확인
-        UserWarehouseRole userWarehouseRole = userWarehouseRoleRepository
-                .findByUserAndWarehouseId(user.getId(), warehouseId)
-                .orElseThrow(() -> new ForbiddenException("해당 창고에 접근 권한이 없습니다."));
-
-        // 2. 그 역할이 해당 권한을 포함하는지 확인
-        boolean hasPermission = rolePermissionRepository
-                .existsByRoleAndPermission(userWarehouseRole.getRole(), permission);
-
-        // 3. 없으면 예외 발생
         if (!hasPermission) {
-            throw new ForbiddenException("해당 작업을 수행할 권한이 없습니다.");
+            throw new AccessDeniedException("해당 창고에 대한 권한이 없습니다: " + permissionCode);
         }
     }
 }
-*/
