@@ -1,7 +1,10 @@
 package com.stock.stockify.domain.tag;
 
+import com.stock.stockify.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tags")
@@ -24,14 +27,18 @@ public class Tag {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Type type;
+    private Type type; // SYSTEM 또는 CUSTOM
 
-    @Column(name = "created_at")
-    private java.time.LocalDateTime createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner; // 이 태그를 소유한 ADMIN 사용자
 
     @PrePersist
-    protected void onCreate() {
-        this.createdAt = java.time.LocalDateTime.now();
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
     }
 
     public enum Type {

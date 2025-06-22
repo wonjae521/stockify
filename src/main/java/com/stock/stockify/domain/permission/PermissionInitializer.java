@@ -19,8 +19,8 @@ public class PermissionInitializer implements CommandLineRunner {
     public void run(String... args) {
         // 초기 권한 목록
         List<String> defaultPermissions = List.of(
-                "INVENTORY_READ", "INVENTORY_WRITE", "INVENTORY_DELETE", "INVENTORY_VIEW",
-                "ORDER_MANAGE", "REPORT_MANAGE", "REPORT_VIEW",
+                "INVENTORY_UPDATE", "INVENTORY_WRITE", "INVENTORY_DELETE", "INVENTORY_VIEW",
+                "ORDER_MANAGE", "REPORT_MANAGE", "REPORT_VIEW", "TAG_VIEW",
                 "TAG_MANAGE", "NOTIFICATION_MANAGE", "NOTIFICATION_VIEW",
                 "USER_MANAGE", "STORAGE_RETRIEVAL_MANAGE", "WAREHOUSE_MANAGE", "WAREHOUSE_VIEW"
         );

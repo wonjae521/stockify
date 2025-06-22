@@ -1,5 +1,6 @@
 package com.stock.stockify.domain.tag;
 
+import com.stock.stockify.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,6 +30,11 @@ public class TagRule {
 
     @Column(nullable = false)
     private Boolean enabled = true;
+
+    // 소유자: 이 규칙은 특정 ADMIN에 귀속됨
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
 
     public enum ConditionType {
         QUANTITY_BELOW, EXPIRING_SOON

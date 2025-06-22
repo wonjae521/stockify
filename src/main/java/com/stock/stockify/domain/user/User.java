@@ -62,4 +62,9 @@ public class User {
     protected void onCreate() { // DB에 현재 시간 저장
         this.createdAt = LocalDateTime.now();
     } // 가입 시간
+
+    public User getAdminOwner() {
+        return (this.admin != null) ? this.admin : this;
+    }
+
 }

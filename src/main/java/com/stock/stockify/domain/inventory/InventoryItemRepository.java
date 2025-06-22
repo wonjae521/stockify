@@ -2,19 +2,37 @@ package com.stock.stockify.domain.inventory;
 
 import com.stock.stockify.domain.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
-// 기본 CRUD 메소드 제공
 public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
-    List<InventoryItem> findByWarehouseId(Long warehouseId);
-    Optional<InventoryItem> findByIdAndWarehouseId(Long id, Long warehouseId);
 
-    // 사용자별 재고 수 카운트 / 이메일 미인증자용
-    @Query("SELECT COUNT(i) FROM InventoryItem i WHERE i.createdBy = :user")
-    long countByCreatedBy(@Param("user") User user);
+    // 소유자 기준 전체 조회
+    List<InventoryItem> findAllByOwner(User owner);
+
+    // 소유자 기준 단일 조회
+    Optional<InventoryItem> findByIdAndOwner(Long id, User owner);
+
+    // 중복 재고 판단 (동일 이름 + 단가 + 단위 + 창고 + 소유자)
+    Optional<InventoryItem> findByNameAndPriceAndUnitAndWarehouseIdAndOwner(
+            String name, Double price, String unit, Long warehouseId, User owner
+    );
+
+    Optional<InventoryItem> findByWarehouseIdAndOwner(Long warehouseId, User owner);
+
+    // 바코드 기준 조회 가능
+    Optional<InventoryItem> findByBarcodeId(String barcodeId);
+
+    // 바코드 중복 검사 (소유자 기준)
+    boolean existsByBarcodeIdAndOwner(String barcodeId, User owner);
+
+    // RFID 중복 검사 (소유자 기준)
+    boolean existsByRfidTagIdAndOwner(String rfidTagId, User owner);
+
+    long countByCreatedBy(User user);
+
+
+
 
 }

@@ -1,10 +1,13 @@
 package com.stock.stockify.domain.inventory;
 
+import com.stock.stockify.domain.user.User;
+import com.stock.stockify.global.auth.PermissionChecker;
+import com.stock.stockify.global.security.UserContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 // InventoryStatusLog 관련 비즈니스 로직 처리 서비스 클래스
@@ -15,31 +18,38 @@ public class InventoryStatusLogService {
 
     private final InventoryStatusLogRepository inventoryStatusLogRepository;
     private final InventoryItemRepository inventoryItemRepository;
+    private final PermissionChecker permissionChecker;
 
-    // 입출고 기록 생성
-    public InventoryStatusLog createLog(InventoryStatusLogRequest request) {
-        // 재고 수가 0개일 때 로그 생성 불가
-        if (inventoryItemRepository.count() == 0) {
-            throw new IllegalStateException("입출고 기록을 남기기 위해서는 먼저 재고를 등록해야 합니다.");
-        }
-
-        InventoryItem item = inventoryItemRepository.findById(request.getInventoryItemId())
-                .orElseThrow(() -> new RuntimeException("해당 재고 아이템을 찾을 수 없습니다."));
+    // 재고 수량 변경 시 로그 자동 기록
+    public void logChange(InventoryItem item, Action action, int quantityChange) {
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
 
         InventoryStatusLog log = InventoryStatusLog.builder()
                 .inventoryItem(item)
-                .action(request.getAction())
-                .quantity(request.getQuantity())
-                .triggeredBy(null) // 사용자 정보 나중에 연동 예정
-                .timestamp(LocalDateTime.now())
-                .warehouseId(item.getWarehouseId()) // 이 부분이 있어야 동작 가능
+                .action(action)
+                .quantity(quantityChange)
+                .triggeredBy(user)
+                .owner(owner)
+                .warehouseId(item.getWarehouseId())
                 .build();
 
-        return inventoryStatusLogRepository.save(log);
+        inventoryStatusLogRepository.save(log);
     }
 
-    // 입출고 기록 전체 조회
-    public List<InventoryStatusLog> getAllLogs() {
-        return inventoryStatusLogRepository.findAll();
+    // 소유자 기준 전체 기록 조회
+    public List<InventoryStatusLog> getMyLogs() {
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
+        permissionChecker.check(user.getId(), "INVENTORY_LOG_VIEW");
+        return inventoryStatusLogRepository.findByOwner(owner);
+    }
+
+    // 소유자 + 창고 기준 기록 조회
+    public List<InventoryStatusLog> getLogsByWarehouse(Long warehouseId) {
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
+        permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "INVENTORY_LOG_VIEW");
+        return inventoryStatusLogRepository.findByOwnerAndWarehouseId(owner, warehouseId);
     }
 }

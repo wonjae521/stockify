@@ -3,10 +3,11 @@ package com.stock.stockify.domain.inventory;
 import com.stock.stockify.domain.category.Category;
 import com.stock.stockify.domain.category.CategoryService;
 import com.stock.stockify.domain.user.User;
-import com.stock.stockify.global.security.CustomUserDetails;
+import com.stock.stockify.global.exception.NotFoundException;
+import com.stock.stockify.global.auth.PermissionChecker;
+import com.stock.stockify.global.security.UserContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,21 +21,15 @@ public class InventoryItemService {
 
     private final InventoryItemRepository inventoryItemRepository;
     private final CategoryService categoryService;
+    private final PermissionChecker permissionChecker;
 
-    // 로그인된 사용자 정보
-    private User getCurrentUser() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof CustomUserDetails userDetails) {
-            return userDetails.getUser();  // 로그인된 사용자 정보 반환
-        }
-        throw new IllegalStateException("현재 로그인된 사용자가 없습니다.");
-    }
-
-    // 재고 등록 기능
+    // 재고 등록 또는 중복 시 수량만 추가 (owner 기준)
     public InventoryItem createInventoryItem(Long warehouseId, InventoryItemRequest request) {
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
+        permissionChecker.check(user.getId(), "INVENTORY_WRITE");
 
-        // 이메일 미인증 사용자에 대한 제한
-        User user = getCurrentUser(); // 여기서 user를 가져옴
+        // 이메일 미인증 사용자는 10개까지만 등록 가능
         if (!user.isEmailVerified()) {
             long count = inventoryItemRepository.countByCreatedBy(user);
             if (count >= 10) {
@@ -42,45 +37,85 @@ public class InventoryItemService {
             }
         }
 
-        // category 이름으로 Category 엔티티 찾아오기
-        Category category = categoryService.getCategoryByName(request.getCategory());
+        Category category = categoryService.getCategoryByNameAndOwner(request.getCategory(), owner);
 
-        // 재고 등록
-        InventoryItem item = InventoryItem.builder()
-                .name(request.getName())
-                .quantity(request.getQuantity())
-                .category(category)
-                .price(request.getPrice())
-                .warehouseId(warehouseId) // 창고 ID 반영
-                .build();
-
-        // DB에 저장
-        return inventoryItemRepository.save(item);
+        return inventoryItemRepository
+                .findByNameAndPriceAndUnitAndWarehouseIdAndOwner(
+                        request.getName(), request.getPrice(), request.getUnit(), warehouseId, owner)
+                .map(existing -> {
+                    existing.setQuantity(existing.getQuantity() + request.getQuantity());
+                    existing.setUpdatedAt(java.time.LocalDateTime.now());
+                    return existing;
+                })
+                .orElseGet(() -> inventoryItemRepository.save(
+                        InventoryItem.builder()
+                                .name(request.getName())
+                                .quantity(request.getQuantity())
+                                .category(category)
+                                .price(request.getPrice())
+                                .unit(request.getUnit())
+                                .thresholdQuantity(request.getThresholdQuantity())
+                                .warehouseId(warehouseId)
+                                .rfidTagId(request.getRfidTagId())
+                                .barcodeId(request.getBarcodeId())
+                                .expirationDate(request.getExpirationDate())
+                                .memo(request.getMemo())
+                                .owner(owner)
+                                .createdBy(user)
+                                .build()
+                ));
     }
 
-    // 재고 전체 조회 기능
+    // 재고 목록 조회 (해당 ADMIN의 소유 재고만)
     public List<InventoryItemResponse> getItemsByWarehouse(Long warehouseId) {
-        return inventoryItemRepository.findByWarehouseId(warehouseId).stream()
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
+        permissionChecker.check(user.getId(), "INVENTORY_VIEW");
+
+        return inventoryItemRepository.findByWarehouseIdAndOwner(warehouseId, owner).stream()
                 .map(InventoryItemResponse::from)
                 .toList();
     }
 
-
     // 재고 수정 기능
     public void updateItem(Long warehouseId, Long itemId, InventoryItemRequest request) {
-        InventoryItem item = inventoryItemRepository.findByIdAndWarehouseId(itemId, warehouseId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 재고 항목이 존재하지 않습니다."));
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
+        permissionChecker.check(user.getId(), "INVENTORY_UPDATE");
+
+        InventoryItem item = inventoryItemRepository.findByIdAndOwner(itemId, owner)
+                .orElseThrow(() -> new NotFoundException("해당 재고를 찾을 수 없습니다."));
 
         item.setName(request.getName());
         item.setQuantity(request.getQuantity());
         item.setPrice(request.getPrice());
-        item.setCategory(categoryService.getCategoryByName(request.getCategory()));
+        item.setCategory(categoryService.getCategoryByNameAndOwner(request.getCategory(), owner));
+        item.setUnit(request.getUnit());
+        item.setThresholdQuantity(request.getThresholdQuantity());
+        item.setMemo(request.getMemo());
     }
 
-    // 재고 삭제 기능
-    public void deleteItem(Long warehouseId, Long itemId) {
-        InventoryItem item = inventoryItemRepository.findByIdAndWarehouseId(itemId, warehouseId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 재고 항목이 존재하지 않습니다."));
-        inventoryItemRepository.delete(item);
+    // 재고 삭제 (Soft Delete)
+    public void deleteItem(Long itemId) {
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
+        permissionChecker.check(user.getId(), "INVENTORY_DELETE");
+
+        InventoryItem item = inventoryItemRepository.findByIdAndOwner(itemId, owner)
+                .orElseThrow(() -> new NotFoundException("해당 재고를 찾을 수 없습니다."));
+
+        item.setDeleted(true); // 소프트 삭제 처리
+    }
+
+    // 단일 조회
+    public InventoryItemResponse getItem(Long itemId) {
+        User user = UserContext.getCurrentUser();
+        User owner = user.getAdminOwner();
+        permissionChecker.check(user.getId(), "INVENTORY_VIEW");
+
+        InventoryItem item = inventoryItemRepository.findByIdAndOwner(itemId, owner)
+                .orElseThrow(() -> new NotFoundException("해당 재고를 찾을 수 없습니다."));
+
+        return InventoryItemResponse.from(item);
     }
 }

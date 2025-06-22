@@ -1,13 +1,12 @@
-
 package com.stock.stockify.domain.inventory;
 
+import com.stock.stockify.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
-import javax.swing.*;
 import java.time.LocalDateTime;
 
-// 재고 입출고 및 조정 기록을 저장하는 테이블(inventory_status_logs)과 매핑
+// 재고 입출고 및 수량 변화 기록을 위한 엔티티
 @Entity
 @Table(name = "inventory_status_logs")
 @Getter
@@ -21,22 +20,32 @@ public class InventoryStatusLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 기록 대상 재고 항목
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_id", nullable = true)
-    private InventoryItem inventoryItem;  // 기록 대상 재고 품목
+    @JoinColumn(name = "item_id", nullable = false)
+    private InventoryItem inventoryItem;
 
+    // 작업 종류: INBOUND, OUTBOUND, ADJUSTMENT 등
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Action action; // 작업 종류 (입고 INBOUND, 출고 OUTBOUND, 조정 ADJUSTMENT)
+    private Action action;
 
+    // 수량 변화
     @Column(nullable = false)
-    private int quantity; // 입출고 수량
+    private int quantity;
 
+    // 기록을 만든 사용자 (직원)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "triggered_by")
-    private com.stock.stockify.domain.user.User triggeredBy; // 기록한 사용자
+    @JoinColumn(name = "triggered_by", nullable = false)
+    private User triggeredBy;
 
-    @Column(name = "timestamp", nullable = false, updatable = false)
+    // 이 로그가 속한 ADMIN (owner 기준으로 분리)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
+
+    // 기록 생성 시각
+    @Column(nullable = false, updatable = false)
     private LocalDateTime timestamp;
 
     @Column(nullable = false, updatable = false)
