@@ -6,12 +6,12 @@ import lombok.*;
 
 import java.io.Serializable;
 
-// 재고 항목과 태그 간의 다대다 연결 테이블 (복합 키)
+// 재고와 태그의 다대다 관계를 관리하는 중간 엔티티, 복합 키를 사용해 InventoryItem + Tag 쌍으로 유일성 보장
 @Entity
 @Table(name = "item_tags")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class ItemTag {
@@ -19,15 +19,16 @@ public class ItemTag {
     @EmbeddedId
     private ItemTagId id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("itemId")
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
-    private InventoryItem inventoryItem;
+    private InventoryItem item;
 
-    @MapsId("tagId")
     @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("tagId")
     @JoinColumn(name = "tag_id")
     private Tag tag;
 
-    // 소유자(owner)는 InventoryItem과 Tag가 동일 ADMIN을 참조하므로 별도 필드 없이 상위에서 처리
+    // isDeleted로 soft-delete 가능
+    private boolean isDeleted;
 }

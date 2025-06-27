@@ -3,130 +3,170 @@ package com.stock.stockify.domain.tag;
 import com.stock.stockify.domain.inventory.InventoryItem;
 import com.stock.stockify.domain.inventory.InventoryItemRepository;
 import com.stock.stockify.domain.user.User;
-import com.stock.stockify.global.auth.PermissionChecker;
+import com.stock.stockify.global.exception.PermissionDeniedException;
 import com.stock.stockify.global.security.UserContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-/**
- * 태그와 관련된 비즈니스 로직을 처리하는 서비스 클래스
- */
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class TagService {
 
     private final TagRepository tagRepository;
+    private final InventoryItemRepository inventoryItemRepository;
     private final ItemTagRepository itemTagRepository;
     private final TagRuleRepository tagRuleRepository;
     private final TagActivityLogRepository tagActivityLogRepository;
-    private final InventoryItemRepository inventoryItemRepository;
-    private final PermissionChecker permissionChecker;
 
-    /** 태그 생성 */
-    public Tag createTag(String name, String description, Tag.Type type) {
+    /**
+     * 태그 생성
+     */
+    @Transactional
+    public void createTag(TagRequest request) {
         User user = UserContext.getCurrentUser();
-        permissionChecker.check(user.getId(), "TAG_MANAGE");
-        User owner = user.getAdminOwner();
+
+        if (!user.isEmailVerified()) {
+            throw new PermissionDeniedException("이메일 인증 후 사용 가능합니다.");
+        }
+
+        boolean exists = tagRepository.existsByNameAndOwnerAndIsDeletedFalse(request.getName(), user);
+        if (exists) {
+            throw new IllegalArgumentException("이미 존재하는 태그 이름입니다.");
+        }
 
         Tag tag = Tag.builder()
-                .name(name)
-                .description(description)
-                .type(type)
-                .owner(owner)
+                .name(request.getName())
+                .description(request.getDescription())
+                .owner(user)
+                .isDeleted(false)
                 .build();
 
-        return tagRepository.save(tag);
+        tagRepository.save(tag);
     }
 
-    /** ADMIN 소유 태그 전체 조회 */
-    public List<Tag> getAllTags() {
+    /**
+     * 태그 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<TagResponse> getTags() {
         User user = UserContext.getCurrentUser();
-        permissionChecker.check(user.getId(), "TAG_VIEW");
-        User owner = user.getAdminOwner();
-        return tagRepository.findByOwner(owner);
+        return tagRepository.findByOwnerAndIsDeletedFalse(user).stream()
+                .map(TagResponse::from)
+                .collect(Collectors.toList());
     }
 
-    /** 품목에 태그 부착 */
-    public void addTagToItem(Long itemId, Long tagId) {
+    /**
+     * 단일 태그 조회
+     */
+    @Transactional(readOnly = true)
+    public TagResponse getTag(Long tagId) {
         User user = UserContext.getCurrentUser();
-        permissionChecker.check(user.getId(), "TAG_MANAGE");
+        Tag tag = tagRepository.findByIdAndIsDeletedFalse(tagId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 태그입니다."));
 
+        if (!tag.getOwner().getId().equals(user.getId())) {
+            throw new PermissionDeniedException("본인 소유의 태그만 조회할 수 있습니다.");
+        }
+
+        return TagResponse.from(tag);
+    }
+
+    /**
+     * 태그 삭제 (soft delete)
+     */
+    @Transactional
+    public void deleteTag(Long tagId) {
+        User user = UserContext.getCurrentUser();
+        Tag tag = tagRepository.findByIdAndIsDeletedFalse(tagId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 태그입니다."));
+
+        if (!tag.getOwner().getId().equals(user.getId())) {
+            throw new PermissionDeniedException("본인 소유의 태그만 삭제할 수 있습니다.");
+        }
+
+        tag.setDeleted(true);
+        tagRepository.save(tag);
+    }
+
+    /**
+     * 품목에 태그 부착
+     */
+    @Transactional
+    public void attachTagToItem(Long itemId, Long tagId) {
+        User user = UserContext.getCurrentUser();
         InventoryItem item = inventoryItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 품목입니다."));
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 태그입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("재고를 찾을 수 없습니다."));
+        Tag tag = tagRepository.findByIdAndIsDeletedFalse(tagId)
+                .orElseThrow(() -> new IllegalArgumentException("태그를 찾을 수 없습니다."));
+
+        if (!tag.getOwner().getId().equals(user.getId())) {
+            throw new PermissionDeniedException("본인 소유의 태그만 부착할 수 있습니다.");
+        }
 
         ItemTag itemTag = ItemTag.builder()
-                .id(new ItemTagId(itemId, tagId))
-                .inventoryItem(item)
+                .id(new ItemTagId(item.getId(), tag.getId()))
+                .item(item)
                 .tag(tag)
                 .build();
-
         itemTagRepository.save(itemTag);
 
-        // 부착 활동 기록
-        TagActivityLog log = TagActivityLog.builder()
-                .inventoryItem(item)
+        tagActivityLogRepository.save(TagActivityLog.builder()
+                .item(item)
                 .tag(tag)
-                .action(TagActivityLog.Action.ADDED)
-                .performedBy(user)
-                .build();
-        tagActivityLogRepository.save(log);
+                .user(user)
+                .action("ADD")
+                .timestamp(LocalDateTime.now())
+                .build());
     }
 
-    /** 품목에 태그 제거 */
-    public void removeTagFromItem(Long itemId, Long tagId) {
+    /**
+     * 품목에서 태그 제거
+     */
+    @Transactional
+    public void detachTagFromItem(Long itemId, Long tagId) {
         User user = UserContext.getCurrentUser();
-        permissionChecker.check(user.getId(), "TAG_MANAGE");
         ItemTagId id = new ItemTagId(itemId, tagId);
-        itemTagRepository.deleteById(id);
+        ItemTag itemTag = itemTagRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("태그가 부착되어 있지 않습니다."));
 
-        // 제거 활동 기록
-        InventoryItem item = inventoryItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 품목입니다."));
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 태그입니다."));
+        itemTagRepository.delete(itemTag);
 
-        TagActivityLog log = TagActivityLog.builder()
-                .inventoryItem(item)
-                .tag(tag)
-                .action(TagActivityLog.Action.REMOVED)
-                .performedBy(user)
-                .build();
-        tagActivityLogRepository.save(log);
+        tagActivityLogRepository.save(TagActivityLog.builder()
+                .item(itemTag.getItem())
+                .tag(itemTag.getTag())
+                .user(user)
+                .action("REMOVE")
+                .timestamp(LocalDateTime.now())
+                .build());
     }
 
-    /** 태그 자동 부착 규칙 생성 */
-    public TagRule createTagRule(Long tagId, TagRule.ConditionType conditionType, String conditionValue) {
+    /**
+     * 자동 태그 규칙 생성
+     */
+    @Transactional
+    public void createTagRule(String condition, String tagName) {
         User user = UserContext.getCurrentUser();
-        permissionChecker.check(user.getId(), "TAG_MANAGE");
-        User owner = user.getAdminOwner();
-
-        Tag tag = tagRepository.findById(tagId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 태그입니다."));
-
         TagRule rule = TagRule.builder()
-                .tag(tag)
-                .conditionType(conditionType)
-                .conditionValue(conditionValue)
-                .enabled(true)
-                .owner(owner)
+                .condition(condition)
+                .tagName(tagName)
+                .owner(user)
+                .isDeleted(false)
                 .build();
-
-        return tagRuleRepository.save(rule);
+        tagRuleRepository.save(rule);
     }
 
-    /** 태그 작업 로그 전체 조회 (ADMIN 기준) */
+    /**
+     * 태그 작업 로그 전체 조회 (관리자 기준)
+     */
+    @Transactional(readOnly = true)
     public List<TagActivityLog> getTagActivityLogs() {
         User user = UserContext.getCurrentUser();
-        permissionChecker.check(user.getId(), "TAG_MANAGE");
-        User owner = user.getAdminOwner();
-        return tagActivityLogRepository.findAll().stream()
-                .filter(log -> log.getInventoryItem().getOwner().equals(owner))
-                .toList();
+        return tagActivityLogRepository.findAllByUser(user);
     }
 }

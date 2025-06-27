@@ -8,57 +8,50 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 태그 부착/해제 기록 로그
- * - 어떤 아이템에 어떤 태그가 언제 어떤 방식으로 적용되었는지를 기록
+ * 태그 추가/제거 등 활동 로그 엔티티
+ * 누가 어떤 재고에 어떤 태그를 언제 적용했는지 기록
  */
 @Entity
 @Table(name = "tag_activity_logs")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class TagActivityLog {
 
-    /** 고유 ID */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 대상 재고 아이템 */
+    /**
+     * 연관된 재고 항목
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
-    private InventoryItem inventoryItem;
+    private InventoryItem item;
 
-    /** 적용된 태그 */
+    /**
+     * 적용된 태그
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tag_id")
     private Tag tag;
 
-    /** 태그 작업 종류 (부착 / 해제) */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Action action;
-
-    /** 작업 수행자 (직원, 관리자 등) */
+    /**
+     * 수행한 사용자 (보통 ADMIN 또는 SUBADMIN)
+     */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "performed_by")
-    private User performedBy;
-
-    /** 작업 수행 시각 */
-    @Column(name = "performed_at")
-    private LocalDateTime performedAt;
-
-    /** 저장 전 자동 수행: 현재 시간 기록 */
-    @PrePersist
-    protected void onCreate() {
-        this.performedAt = LocalDateTime.now();
-    }
+    @JoinColumn(name = "user_id")
+    private User user;
 
     /**
-     * 로그 타입 정의 (부착 ADDED / 해제 REMOVED)
+     * 활동 타입: ADD / REMOVE
      */
-    public enum Action {
-        ADDED, REMOVED
-    }
+    private String action;
+
+    /**
+     * 태그 적용 시각
+     */
+    private LocalDateTime timestamp;
 }

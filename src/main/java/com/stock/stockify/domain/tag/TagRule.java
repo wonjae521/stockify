@@ -2,13 +2,15 @@ package com.stock.stockify.domain.tag;
 
 import com.stock.stockify.domain.user.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+// 조건 기반 자동 태그 부여 규칙 엔티티, 예시: "재고 수량 < 5"일 때 "부족" 태그 자동 부여
 @Entity
 @Table(name = "tag_rules")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class TagRule {
@@ -17,26 +19,19 @@ public class TagRule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tag_id", nullable = false)
-    private Tag tag;
+    // 조건 표현식 (예: quantity < 5)
+    @NotBlank(message = "조건은 필수입니다.")
+    private String condition;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "condition_type", nullable = false)
-    private ConditionType conditionType;
+    // 적용할 태그 이름 (직접 연결 아님)
+    @NotBlank(message = "태그 이름은 필수입니다.")
+    private String tagName;
 
-    @Column(name = "condition_value", nullable = false)
-    private String conditionValue;
-
-    @Column(nullable = false)
-    private Boolean enabled = true;
-
-    // 소유자: 이 규칙은 특정 ADMIN에 귀속됨
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
+    // 생성한 ADMIN (권한 검사 및 격리)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id")
     private User owner;
 
-    public enum ConditionType {
-        QUANTITY_BELOW, EXPIRING_SOON
-    }
+    // isDeleted로 soft-delete 가능
+    private boolean isDeleted;
 }

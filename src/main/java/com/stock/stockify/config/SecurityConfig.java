@@ -82,11 +82,11 @@ public class SecurityConfig {
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 등록
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 // 폼 로그인(formLogin) 비활성화 (토큰 인증을 쓰니까 필요 없음)
-                // 폼 로그인(formLogin) 비활성화 (토큰 인증을 쓰니까 필요 없음)
                 .formLogin(form -> form.disable()) // 폼 로그인(formLogin) 비활성화 (토큰 인증을 쓰니까 필요 없음)
                 // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
-                // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
-                .httpBasic(basic -> basic.disable()); // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음);
+                .httpBasic(basic -> basic.disable()); // HTTP Basic 인증 비활성화 (토큰 인증을 쓰니까 필요 없음)
+
+
 
 
 

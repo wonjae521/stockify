@@ -19,7 +19,9 @@ public class InventoryItemController {
     private final PermissionChecker permissionChecker;
     private final UserService userService;
 
-    // 재고 등록
+    /**
+     * 재고 등록
+     */
     @PostMapping("/warehouses/{warehouseId}")
     public ResponseEntity<InventoryItemResponse> create(@PathVariable Long warehouseId,
                                                         @RequestBody InventoryItemRequest request) {
@@ -30,7 +32,9 @@ public class InventoryItemController {
         return ResponseEntity.ok(InventoryItemResponse.from(created));
     }
 
-    // 재고 전체 조회
+    /**
+     * 재고 전체 조회
+     */
     @GetMapping("/warehouses/{warehouseId}")
     public ResponseEntity<List<InventoryItemResponse>> getAll(@PathVariable Long warehouseId) {
         User user = UserContext.getCurrentUser();
@@ -39,13 +43,17 @@ public class InventoryItemController {
         return ResponseEntity.ok(inventoryItemService.getItemsByWarehouse(warehouseId));
     }
 
-    // 재고 단일 조회
+    /**
+     * 재고 단일 조회
+     */
     @GetMapping("/{itemId}")
     public ResponseEntity<InventoryItemResponse> getOne(@PathVariable Long itemId) {
         return ResponseEntity.ok(inventoryItemService.getItem(itemId));
     }
 
-    // 재고 수정
+    /**
+     * 재고 수정
+     */
     @PutMapping("/warehouses/{warehouseId}/items/{itemId}")
     public ResponseEntity<Void> update(@PathVariable Long warehouseId,
                                        @PathVariable Long itemId,
@@ -53,15 +61,17 @@ public class InventoryItemController {
         User user = UserContext.getCurrentUser();
         permissionChecker.checkAccessToWarehouse(user.getId(), warehouseId, "INVENTORY_WRITE");
 
-        inventoryItemService.updateItem(warehouseId, itemId, request);
+        inventoryItemService.updateInventoryItem(warehouseId, itemId, request);
         return ResponseEntity.ok().build();
     }
 
-    // 재고 삭제 (Soft Delete)
+    /**
+     * 재고 삭제 (Soft Delete)
+     */
     @DeleteMapping("/items/{itemId}")
     public ResponseEntity<Void> delete(@PathVariable Long itemId) {
         User user = UserContext.getCurrentUser();
-        inventoryItemService.deleteItem(itemId);
+        inventoryItemService.deleteInventoryItem(itemId);
         return ResponseEntity.noContent().build();
     }
 }

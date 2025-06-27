@@ -1,31 +1,37 @@
 package com.stock.stockify.domain.inventory;
 
-import com.stock.stockify.domain.inventory.InventoryItem;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Builder
 public class InventoryItemResponse {
 
-    private Long id;           // 재고 ID
-    private String name;       // 품목명
-    private String category;   // 카테고리명
-    private int quantity;      // 수량
-    private String rfidTagId;  // RFID 태그
-    private String barcodeId;  // 바코드
-    private double price;      // 가격
+    private Long id;
+    private String name;
+    private String category;
+    private int quantity;
+    private String unit;
+    private Integer price;
+    private String memo;
 
-    // InventoryItem 엔티티 → DTO 변환
+    private List<InventoryUnitResponse> units;
+
     public static InventoryItemResponse from(InventoryItem item) {
         return InventoryItemResponse.builder()
                 .id(item.getId())
                 .name(item.getName())
                 .category(item.getCategory().getName())
                 .quantity(item.getQuantity())
-                .rfidTagId(item.getRfidTagId())
-                .barcodeId(item.getBarcodeId())
+                .unit(item.getUnit())
                 .price(item.getPrice())
+                .memo(item.getMemo())
+                .units(item.getUnits().stream()
+                        .map(InventoryUnitResponse::from)
+                        .collect(Collectors.toList()))
                 .build();
     }
 }

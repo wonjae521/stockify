@@ -1,95 +1,76 @@
 package com.stock.stockify.domain.inventory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.stock.stockify.domain.category.Category;
 import com.stock.stockify.domain.user.User;
+import com.stock.stockify.domain.warehouse.Warehouse;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Where;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.LastModifiedBy;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-// 재고 항목 엔티티
 @Entity
-@Table(name = "inventory_items")
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-@Where(clause = "is_deleted = false")
 public class InventoryItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 재고 이름
     @Column(nullable = false)
-    private String name; // 재고명
+    private String name;
 
+    // 단위 (예: 개, 박스)
+    private String unit;
+
+    // 수량 임계값 (알림 기준)
+    private Integer thresholdQuantity;
+
+    // 단가
+    private Integer price;
+
+    // 카테고리
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
 
+    // 소유자 (최상위 관리자)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
+
+    // 개별 재고 단위들
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<InventoryUnit> units = new ArrayList<>();
+
+    // 실제 재고 수량 (units.size()로 대체 가능)
+    @JsonIgnore
+    public int getQuantity() {
+        return (int) units.stream().filter(unit -> !unit.isSold()).count();
+    }
+
+    // 메모
+    private String memo;
+
+    // 삭제 여부 (soft delete)
     @Column(nullable = false)
-    private int quantity; // 수량
-
-    @Column(name = "rfid_tag_id")
-    private String rfidTagId;
-
-    @Column(name = "barcode_id", unique = true)
-    private String barcodeId;
-
-    @Column(nullable = false)
-    private Double price; // 단가
-
-    @Column(name = "warehouse_id", nullable = false)
-    private Long warehouseId;
-
-    @Column(name = "expiration_date")
-    private LocalDateTime expirationDate;
-
-    @Column(nullable = false)
-    private String unit; // 단위 (예: 개, 박스, L)
-
-    @Column(name = "threshold_quantity", nullable = false)
-    private int thresholdQuantity; // 최소 재고 경고 기준
-
-    @Column(columnDefinition = "TEXT")
-    private String memo; // 비고 메모
-
-    @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
-    @Column(name = "created_at")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
+
+    // 생성 시각
+    @Column(updatable = false)
+    @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner; // 소유자 - 무조건 ADMIN
-
-    @CreatedBy
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    private User createdBy; // 생성한 사용자
-
-    @LastModifiedBy
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "last_modified_by")
-    private User lastModifiedBy; // 마지막 수정 사용자
 }

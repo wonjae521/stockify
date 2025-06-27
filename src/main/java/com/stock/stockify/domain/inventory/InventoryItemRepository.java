@@ -14,23 +14,18 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
     // 소유자 기준 단일 조회
     Optional<InventoryItem> findByIdAndOwner(Long id, User owner);
 
+    // 사용자가 소유한 특정 이름의 재고 조회
+    Optional<InventoryItem> findByNameAndOwner(String name, User owner);
+
+    /**
     // 중복 재고 판단 (동일 이름 + 단가 + 단위 + 창고 + 소유자)
     Optional<InventoryItem> findByNameAndPriceAndUnitAndWarehouseIdAndOwner(
             String name, Double price, String unit, Long warehouseId, User owner
-    );
+    );*/
 
     Optional<InventoryItem> findByWarehouseIdAndOwner(Long warehouseId, User owner);
 
-    // 바코드 기준 조회 가능
-    Optional<InventoryItem> findByBarcodeId(String barcodeId);
-
-    // 바코드 중복 검사 (소유자 기준)
-    boolean existsByBarcodeIdAndOwner(String barcodeId, User owner);
-
-    // RFID 중복 검사 (소유자 기준)
-    boolean existsByRfidTagIdAndOwner(String rfidTagId, User owner);
-
-    long countByCreatedBy(User user);
+    long countByOwner(User owner);
 
 
 

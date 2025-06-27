@@ -2,15 +2,17 @@ package com.stock.stockify.domain.tag;
 
 import com.stock.stockify.domain.user.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
-@Table(name = "tags")
+@Table(name = "tags",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"name", "owner_id"})} // ADMIN별 태그 이름 중복 방지
+)
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 public class Tag {
@@ -19,29 +21,20 @@ public class Tag {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    // 태그 이름(ADMIN 별)
+    @NotBlank(message = "태그 이름은 필수입니다.")
+    @Size(max = 30, message = "태그 이름은 최대 30자까지 입력 가능합니다.")
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    // 태그 설명 (선택)
+    @Size(max = 255, message = "설명은 최대 255자까지 입력 가능합니다.")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Type type; // SYSTEM 또는 CUSTOM
+    // 태그 생성자(ADMIN만 가능)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner; // 이 태그를 소유한 ADMIN 사용자
-
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
-    public enum Type {
-        SYSTEM, CUSTOM
-    }
+    // isDeleted로 soft-delete 가능
+    private boolean isDeleted;
 }
